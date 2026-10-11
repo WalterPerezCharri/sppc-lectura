@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPPC Lectura — Entrenador de fluidez lectora</title>
+<style>
+  :root{
+    --paper:#F7EDE2;
+    --paper2:#FFF9F1;
+    --ink:#563E79;
+    --body:#3A3340;
+    --coral:#F28482;
+    --sage:#84A59D;
+    --sage-d:#5E857D;
+    --sun:#FFCE80;
+    --soft:#F5CAC3;
+    --line:#E4D5C5;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'Trebuchet MS','Segoe UI',Verdana,system-ui,sans-serif;
+    background:var(--paper);
+    color:var(--body);
+    min-height:100vh;
+    line-height:1.55;
+  }
+  .wrap{max-width:960px;margin:0 auto;padding:20px 18px 80px}
+  header{
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    padding:18px 4px 10px;
+  }
+  .logo{
+    width:52px;height:52px;flex:0 0 52px;border-radius:16px;
+    background:var(--ink);display:grid;place-items:center;
+    box-shadow:4px 4px 0 var(--soft);
+  }
+  .logo svg{width:30px;height:30px}
+  h1{font-size:1.45rem;color:var(--ink);line-height:1.2}
+  .sub{font-size:.85rem;color:#8a7a99;font-weight:bold;letter-spacing:.04em}
+  .tag{
+    margin-left:auto;background:var(--sun);color:#5a4310;
+    font-size:.72rem;font-weight:bold;padding:6px 12px;border-radius:999px;
+    border:2px solid var(--ink);
+  }
+
+  /* ---------- nav ---------- */
+  nav{display:flex;gap:8px;margin:14px 0 20px;flex-wrap:wrap}
+  .tab{
+    font-family:inherit;font-size:.95rem;font-weight:bold;cursor:pointer;
+    padding:10px 20px;border-radius:999px;border:2px solid var(--ink);
+    background:var(--paper2);color:var(--ink);
+    box-shadow:3px 3px 0 var(--ink);
+    transition:transform .08s ease, box-shadow .08s ease;
+  }
+  .tab:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  .tab.on{background:var(--ink);color:#fff}
+  .tab:disabled{opacity:.45;cursor:not-allowed}
+
+  /* ---------- cards ---------- */
+  .card{
+    background:var(--paper2);
+    border:2px solid var(--line);
+    border-radius:22px;
+    padding:22px;
+    margin-bottom:18px;
+  }
+  .card h2{color:var(--ink);font-size:1.15rem;margin-bottom:6px}
+  .card .hint{font-size:.85rem;color:#8a7a99;margin-bottom:14px}
+
+  /* ---------- level pills ---------- */
+  .levels{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+  .lvl{
+    font-family:inherit;cursor:pointer;font-weight:bold;font-size:.88rem;
+    border:2px solid var(--ink);border-radius:14px;padding:10px 14px;
+    background:#fff;color:var(--ink);
+    box-shadow:3px 3px 0 var(--ink);
+    transition:transform .08s, box-shadow .08s;
+  }
+  .lvl:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  .lvl.on{background:var(--coral);color:#fff}
+  .lvl small{display:block;font-weight:normal;font-size:.68rem;opacity:.85}
+
+  .texts{display:grid;gap:10px}
+  .textitem{
+    display:flex;align-items:center;gap:14px;cursor:pointer;
+    background:#fff;border:2px solid var(--line);border-radius:16px;
+    padding:14px 16px;text-align:left;font-family:inherit;width:100%;
+    transition:border-color .15s;
+  }
+  .textitem:hover{border-color:var(--ink)}
+  .textitem .n{
+    width:40px;height:40px;flex:0 0 40px;border-radius:12px;
+    background:var(--soft);display:grid;place-items:center;
+    font-weight:bold;color:var(--ink);font-size:1.05rem;
+  }
+  .textitem b{color:var(--ink);display:block;font-size:1rem}
+  .textitem span{font-size:.8rem;color:#8a7a99}
+
+  /* ---------- reader ---------- */
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+  .btn{
+    font-family:inherit;font-size:.95rem;font-weight:bold;cursor:pointer;
+    padding:12px 22px;border-radius:14px;border:2px solid var(--ink);
+    background:var(--sun);color:#43320a;
+    box-shadow:4px 4px 0 var(--ink);
+    transition:transform .08s, box-shadow .08s;
+  }
+  .btn:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
+  .btn.sage{background:var(--sage);color:#fff}
+  .btn.coral{background:var(--coral);color:#fff}
+  .btn.ghost{background:#fff;color:var(--ink)}
+  .btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:2px 2px 0 var(--ink)}
+  .btn.big{font-size:1.1rem;padding:16px 30px;border-radius:18px}
+
+  .speedrow{display:flex;align-items:center;gap:10px;font-size:.85rem;font-weight:bold;color:var(--ink)}
+  input[type=range]{accent-color:var(--coral);width:130px}
+
+  .passage{
+    background:#fff;border:2px solid var(--line);border-radius:18px;
+    padding:26px 24px;margin-bottom:18px;
+    font-size:1.45rem;line-height:2.15;color:var(--body);
+    user-select:none;
+  }
+  .passage.size-s{font-size:1.15rem;line-height:2}
+  .w{
+    padding:2px 3px;border-radius:8px;cursor:default;
+    transition:background .12s;
+  }
+  .passage.marking .w{cursor:pointer}
+  .w.cur{background:var(--sun);box-shadow:0 2px 0 var(--coral)}
+  .w.ok{background:#DCE9E4;color:#2f5d52}
+  .w.err{background:var(--soft);color:#a03a37;text-decoration:underline wavy var(--coral)}
+  .w.end{box-shadow:inset 0 -4px 0 var(--ink)}
+
+  .timer{
+    font-size:2.4rem;font-weight:bold;color:var(--ink);
+    font-variant-numeric:tabular-nums;letter-spacing:.02em;
+  }
+  .statusline{font-size:.9rem;color:#8a7a99;min-height:1.4em;font-weight:bold}
+  .statusline.live{color:var(--sage-d)}
+
+  /* ---------- results ---------- */
+  .results{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:16px 0}
+  .metric{
+    background:#fff;border:2px solid var(--line);border-radius:16px;
+    padding:14px;text-align:center;
+  }
+  .metric .v{font-size:1.9rem;font-weight:bold;color:var(--ink);font-variant-numeric:tabular-nums}
+  .metric .l{font-size:.75rem;font-weight:bold;color:#8a7a99;text-transform:uppercase;letter-spacing:.05em}
+  .verdict{
+    border-radius:16px;padding:14px 18px;font-weight:bold;font-size:1rem;
+    border:2px solid var(--ink);margin-bottom:14px;
+  }
+  .verdict.good{background:#DCE9E4;color:#2f5d52}
+  .verdict.mid{background:#FDF0D3;color:#7a5a10}
+  .verdict.low{background:var(--soft);color:#a03a37}
+
+  /* ---------- history ---------- */
+  table{width:100%;border-collapse:collapse;font-size:.88rem;background:#fff;border-radius:14px;overflow:hidden}
+  th{background:var(--ink);color:#fff;text-align:left;padding:10px 12px;font-size:.78rem;letter-spacing:.03em}
+  td{padding:9px 12px;border-bottom:1px solid var(--line)}
+  tr:last-child td{border-bottom:none}
+  .badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:.72rem;font-weight:bold}
+  .badge.g{background:#DCE9E4;color:#2f5d52}
+  .badge.y{background:#FDF0D3;color:#7a5a10}
+  .badge.r{background:var(--soft);color:#a03a37}
+  canvas.chart{width:100%;height:190px;background:#fff;border:2px solid var(--line);border-radius:16px;margin-top:14px}
+
+  .namein{
+    font-family:inherit;font-size:1rem;padding:11px 14px;border-radius:12px;
+    border:2px solid var(--line);background:#fff;color:var(--body);width:100%;max-width:320px;
+  }
+  .namein:focus{outline:none;border-color:var(--ink)}
+  label.fl{font-size:.8rem;font-weight:bold;color:var(--ink);display:block;margin:10px 0 5px}
+
+  .note{
+    background:#FDF0D3;border:2px dashed #d8b45a;border-radius:14px;
+    padding:12px 16px;font-size:.84rem;color:#7a5a10;margin-bottom:16px;
+  }
+  .hidden{display:none!important}
+  footer{margin-top:34px;text-align:center;font-size:.75rem;color:#a293ad}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#F7EDE2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19a2 2 0 0 0 2 2h13"/><path d="M9 7h6M9 11h4"/>
+      </svg>
+    </div>
+    <div>
+      <h1>SPPC · Entrenador de Lectura</h1>
+      <div class="sub">SISTEMA PIRAMIDAL DE PRÁCTICA CONTINUA — PROTOTIPO 1.0</div>
+    </div>
+    <span class="tag">100 % local · sin internet</span>
+  </header>
+
+  <nav>
+    <button class="tab on" data-view="home">📖 Textos</button>
+    <button class="tab" data-view="read" id="tabRead" disabled>🎙️ Práctica</button>
+    <button class="tab" data-view="hist">📈 Progreso</button>
+  </nav>
+
+  <!-- ============ VISTA: TEXTOS ============ -->
+  <section id="view-home">
+    <div class="card">
+      <h2>¿Quién practica hoy?</h2>
+      <label class="fl" for="studentName">Nombre del estudiante</label>
+      <input class="namein" id="studentName" placeholder="Escribe el nombre…" autocomplete="off">
+    </div>
+    <div class="card">
+      <h2>Elige el nivel de la escalera</h2>
+      <div class="hint">Cada nivel tiene su meta de velocidad (palabras por minuto) según el plan SPPC.</div>
+      <div class="levels" id="levelRow"></div>
+      <div class="texts" id="textList"></div>
+    </div>
+  </section>
+
+  <!-- ============ VISTA: PRÁCTICA ============ -->
+  <section id="view-read" class="hidden">
+    <div class="card">
+      <h2 id="readTitle">—</h2>
+      <div class="hint" id="readMeta">—</div>
+
+      <div class="toolbar">
+        <button class="btn sage" id="btnListen">▶ Escuchar modelo</button>
+        <button class="btn ghost" id="btnListenStop" disabled>■ Detener</button>
+        <div class="speedrow">
+          Velocidad
+          <input type="range" id="rate" min="0.5" max="1.3" step="0.1" value="0.9">
+          <span id="rateVal">0.9×</span>
+        </div>
+      </div>
+
+      <div class="note" id="modeNote">
+        <b>Modo medición:</b> pulsa «Comenzar lectura» y el estudiante lee en voz alta.
+        En modo <b>automático</b> el navegador escucha y marca las palabras (requiere Chrome/Edge con internet).
+        En modo <b>manual</b> el tutor <b>toca las palabras con error</b> y funciona sin internet.
+      </div>
+
+      <div class="toolbar">
+        <button class="btn coral big" id="btnStart">● Comenzar lectura</button>
+        <button class="btn big" id="btnStop" disabled>■ Terminar</button>
+        <button class="btn ghost" id="btnMode">Modo: automático 🎙️</button>
+        <button class="btn ghost hidden" id="btnEndAt">📍 Marcar fin de lectura</button>
+      </div>
+
+      <div style="display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;margin-bottom:6px">
+        <div class="timer" id="timer">0:00</div>
+        <div class="statusline" id="status">Listo para empezar.</div>
+      </div>
+    </div>
+
+    <div class="passage" id="passage"></div>
+
+    <div class="card hidden" id="resultCard">
+      <h2>Resultado de la sesión</h2>
+      <div class="verdict good" id="verdict">—</div>
+      <div class="results">
+        <div class="metric"><div class="v" id="mWpm">0</div><div class="l">Palabras / min</div></div>
+        <div class="metric"><div class="v" id="mAcc">0%</div><div class="l">Precisión</div></div>
+        <div class="metric"><div class="v" id="mErr">0</div><div class="l">Errores</div></div>
+        <div class="metric"><div class="v" id="mGoal">—</div><div class="l">Meta del nivel</div></div>
+      </div>
+      <div class="toolbar">
+        <button class="btn sage" id="btnSave">💾 Guardar en progreso</button>
+        <button class="btn ghost" id="btnRetry">↻ Repetir texto</button>
+        <button class="btn ghost" id="btnBack">← Elegir otro texto</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ VISTA: PROGRESO ============ -->
+  <section id="view-hist" class="hidden">
+    <div class="card">
+      <h2>Escalera de progreso</h2>
+      <div class="hint">Cada sesión guardada queda registrada en esta máquina. Expórtala a CSV para consolidarla en la planilla de la academia.</div>
+      <div class="toolbar">
+        <button class="btn sage" id="btnCsv">⬇ Exportar CSV</button>
+        <button class="btn coral" id="btnClear">🗑 Borrar historial</button>
+      </div>
+      <div id="histWrap"><p class="hint" id="histEmpty">Aún no hay sesiones guardadas. Completa una práctica y pulsa «Guardar en progreso».</p></div>
+      <canvas class="chart hidden" id="chart" width="880" height="190"></canvas>
+    </div>
+  </section>
+
+  <footer>SPPC · Módulo de lectura — prototipo local v1.0 · Los datos se guardan solo en este dispositivo.</footer>
+</div>
+<script>
+/* ================================================================
+   SPPC · Entrenador de Lectura — prototipo local
+   Datos: textos graduados por nivel (metas del plan SPPC)
+   ================================================================ */
+const LEVELS = [
+  { id:'L1', label:'L1', ages:'7–8 años',  goal:40,  goalTxt:'40 ppm',
+    desc:'Sílabas y oraciones simples' },
+  { id:'L2', label:'L2', ages:'9–10 años', goal:100, goalTxt:'100 ppm',
+    desc:'Oraciones y párrafos' },
+  { id:'L3', label:'L3', ages:'11–12 años',goal:130, goalTxt:'130 ppm',
+    desc:'Textos completos' },
+  { id:'L4', label:'L4', ages:'13–14 años',goal:160, goalTxt:'160 ppm',
+    desc:'Lectura de libros' },
+  { id:'L5', label:'L5', ages:'15–16 años',goal:185, goalTxt:'185 ppm',
+    desc:'Ensayo y prensa' },
+  { id:'L6', label:'L6', ages:'16–17 años',goal:200, goalTxt:'200+ ppm',
+    desc:'Síntesis crítica' },
+];
+
+const TEXTS = {
+  L1: [
+    { title:'El gato y el sol', body:'El gato toma el sol en el patio. La luna sale de noche. Mi mamá me da una sopa rica. El perro ladra al gato y el gato salta al techo. Yo leo con mi papá cada día. La casa es linda y mi mesa es de pino.' },
+    { title:'Mi familia', body:'Mi papá sale a la calle. Mi mamá pone la mesa. Mi hermano lee un libro. Yo tomo mi leche en la mesa. El sol sale cada mañana y el gallo canta con ganas. Me gusta ir a jugar al parque con mi perro.' },
+  ],
+  L2: [
+    { title:'El mercado del sábado', body:'Los sábados voy al mercado con mi abuela. Ella compra papas, tomates y frutas dulces. El señor del puesto nos regala una mandarina. Yo ayudo a llevar las bolsas. De vuelta a casa, mi abuela me cuenta cuentos de cuando era niña. La sopa que cocina con esas verduras es la más rica del mundo.' },
+    { title:'La lluvia en el techo', body:'Anoche llovió con fuerza y la lluvia sonaba en el techo como tambores pequeños. Mi hermana tenía un poco de miedo, pero yo le leí un cuento de dragones buenos. Poco a poco se quedó dormida. Esta mañana el cielo está limpio y azul, y en el jardín hay charcos donde saltan los gorriones.' },
+  ],
+  L3: [
+    { title:'El río que canta', body:'Cerca de mi pueblo corre un río que baja de la montaña. En verano su agua es fría y clara, y los peces plateados saltan entre las piedras. Mi tío dice que el río canta distinto en cada estación: fuerte y alegre cuando crece con las lluvias, suave y lento en los meses de sol. Cuidar el río es cuidar la vida de todos, porque sus aguas riegan los campos de maíz y dan de beber a los animales del valle.' },
+    { title:'Una carta para el futuro', body:'La profesora Rosa nos pidió escribir una carta para nosotros mismos dentro de diez años. Yo escribí que quiero ser ingeniera y construir puentes que unan los pueblos de la sierra. También escribí que espero seguir leyendo un libro cada mes, porque los libros me han enseñado más lugares de los que podría visitar. Guardamos las cartas en una caja de madera que se abrirá cuando terminemos el colegio.' },
+  ],
+  L4: [
+    { title:'La biblioteca de don Esteban', body:'Don Esteban convirtió la sala de su casa en la única biblioteca del distrito. Empezó con doce libros viejos que compró en una feria, y hoy tiene más de mil, ordenados en estantes que él mismo carpinteó. Los niños llegan después del colegio, dejan sus mochilas en la entrada y leen sentados en cojines de colores. Don Esteban no cobra nada; solo pide dos cosas: cuidar los libros y contarle, al devolverlos, qué aprendieron. Dice que un pueblo que lee nunca está solo, porque cada libro es una conversación con alguien que tuvo algo valioso que decir.' },
+    { title:'Sembrar en altura', body:'En las comunidades altoandinas, sembrar es un arte de paciencia y conocimiento. Los agricultores leen las señales de la naturaleza: la floración de ciertas plantas anuncia las heladas, y el comportamiento de las aves anticipa las lluvias. Con esa sabiduría, heredada de generaciones, deciden cuándo plantar la papa, la quinua y el maíz. Hoy, algunos jóvenes combinan ese conocimiento con pronósticos del clima que consultan en sus teléfonos. El resultado es notable: cosechas más seguras y comunidades que miran el futuro sin renunciar a su pasado.' },
+  ],
+  L5: [
+    { title:'El valor de preguntar', body:'La ciencia no avanza por las respuestas, sino por las preguntas. Cada gran descubrimiento comenzó con alguien que se negó a aceptar que las cosas eran así porque sí. Preguntarse por qué cae una manzana, por qué enferma un cuerpo o por qué brillan las estrellas ha transformado la historia humana. Sin embargo, en muchas aulas preguntar todavía se confunde con interrumpir, y el silencio se premia más que la curiosidad. Un sistema educativo que quiere formar pensadores debe hacer exactamente lo contrario: celebrar la pregunta incómoda, acompañar la búsqueda y enseñar a dudar con método. Porque quien aprende a preguntar bien, aprende a pensar; y quien aprende a pensar, ya no depende de que otros piensen por él.' },
+    { title:'Leer en la era de las pantallas', body:'Leer en una pantalla no es lo mismo que leer en papel, y la diferencia no está en el soporte sino en los hábitos que cada uno promueve. La pantalla invita al escaneo: saltar de un titular a otro, picar notificaciones, abandonar los párrafos largos. El libro exige lo opuesto: atención sostenida, seguimiento de una idea a lo largo de cien páginas, paciencia para el desarrollo de un argumento. Ninguno de los dos formatos desaparecerá, pero la escuela debe proteger la lectura profunda como se protege una reserva natural. Quien solo escanea pierde la capacidad de comprender textos complejos, y con ella, la posibilidad de comprender problemas complejos. La velocidad de lectura importa, pero solo cuando va acompañada de la comprensión.' },
+  ],
+  L6: [
+    { title:'La energía que viene', body:'La transición energética es probablemente el mayor desafío técnico y ético de este siglo. Reemplazar los combustibles fósiles no consiste únicamente en instalar paneles solares o turbinas de viento: implica rediseñar redes eléctricas, repensar el transporte, transformar la industria y, sobre todo, decidir quién paga los costos del cambio. Los países que más contaminaron históricamente poseen también los mayores recursos para financiar la transición, mientras que los que menos contribuyeron al problema enfrentan sus peores consecuencias. Esta asimetría convierte un desafío de ingeniería en una cuestión de justicia. Las nuevas generaciones heredarán tanto la infraestructura como las deudas de estas decisiones. Por eso la educación científica ya no puede ser un lujo de especialistas: comprender la energía, cómo se genera, cómo se almacena, qué costos implica cada fuente, es hoy una competencia ciudadana tan básica como la lectura o la aritmética. El futuro se decidirá en tratados y laboratorios, pero también en millones de aulas donde se forma la capacidad de evaluar evidencia y exigir decisiones informadas.' },
+    { title:'Pensar con números', body:'Vivimos inundados de datos y, paradójicamente, cada vez es más fácil mentir con ellos. Un promedio puede ocultar desigualdades brutales; un porcentaje puede sonar enorme sin contexto; una gráfica puede manipularse cortando el eje vertical. La alfabetización estadística es, en ese sentido, una herramienta de defensa personal. No se trata de que todos sean matemáticos, sino de que cualquier ciudadano pueda hacerse tres preguntas ante un número: de dónde viene, con qué se compara y qué intereses hay detrás. Estas preguntas, simples pero disciplinadas, desactivan la mayoría de las manipulaciones informativas. Formar lectores competentes de números es tan urgente como formar lectores de textos, porque la democracia moderna se debate cada vez más en el lenguaje de los datos. Un ciudadano que no puede evaluar una estadística queda expuesto a quienes sí saben usarla, y la libertad sin comprensión es una libertad frágil.' },
+  ],
+};
+
+/* ===================== estado ===================== */
+const $ = s => document.querySelector(s);
+const state = {
+  level: LEVELS[0],
+  textIdx: 0,
+  words: [],          // [{raw, norm}]
+  mode: 'auto',       // 'auto' | 'manual'
+  running: false,
+  t0: 0, timerInt: null,
+  matched: 0, lastMatched: -1,
+  manualErr: new Set(), endAt: -1, endMarking:false,
+  recog: null, recogActive: false,
+};
+let listenFallback=null, utter=null;
+
+const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-zñ0-9]/g,'');
+
+/* ===================== navegación ===================== */
+const views = { home:'#view-home', read:'#view-read', hist:'#view-hist' };
+document.querySelectorAll('.tab').forEach(b=>{
+  b.addEventListener('click',()=>{
+    stopListening(); stopPractice(true);
+    document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===b));
+    Object.entries(views).forEach(([k,sel])=>$(sel).classList.toggle('hidden',k!==b.dataset.view));
+    if(b.dataset.view==='hist') renderHistory();
+  });
+});
+
+/* ===================== vista textos ===================== */
+function renderLevels(){
+  const row = $('#levelRow'); row.innerHTML='';
+  LEVELS.forEach(l=>{
+    const b=document.createElement('button');
+    b.className='lvl'+(l.id===state.level.id?' on':'');
+    b.innerHTML=`${l.label} · ${l.goalTxt}<small>${l.ages} — ${l.desc}</small>`;
+    b.onclick=()=>{state.level=l;renderLevels();};
+    row.appendChild(b);
+  });
+  const list=$('#textList'); list.innerHTML='';
+  TEXTS[state.level.id].forEach((t,i)=>{
+    const el=document.createElement('button');
+    el.className='textitem';
+    el.innerHTML=`<div class="n">${i+1}</div><div><b>${t.title}</b><span>${t.body.split(/\s+/).length} palabras · ${state.level.ages}</span></div>`;
+    el.onclick=()=>openText(i);
+    list.appendChild(el);
+  });
+}
+
+/* ===================== preparar lectura ===================== */
+function openText(i){
+  state.textIdx=i;
+  const t=TEXTS[state.level.id][i];
+  state.words=t.body.split(/\s+/).map(w=>({raw:w,norm:norm(w)}));
+  $('#readTitle').textContent=`${state.level.label} — ${t.title}`;
+  $('#readMeta').textContent=`${state.words.length} palabras · Meta: ${state.level.goalTxt} · ${state.level.ages}`;
+  const pas=$('#passage');
+  pas.classList.toggle('size-s', state.words.length>140);
+  pas.innerHTML=state.words.map((w,j)=>`<span class="w" data-i="${j}">${w.raw}</span>`).join(' ');
+  $('#resultCard').classList.add('hidden');
+  $('#tabRead').disabled=false;
+  document.querySelector('[data-view="read"]').click();
+  resetPractice();
+}
+
+/* ===================== modo escuchar (TTS + highlight) ===================== */
+function stopListening(){
+  if(window.speechSynthesis){ speechSynthesis.cancel(); }
+  if(listenFallback){ clearInterval(listenFallback); listenFallback=null; }
+  document.querySelectorAll('#passage .w.cur').forEach(e=>e.classList.remove('cur'));
+  $('#btnListen').disabled=false; $('#btnListenStop').disabled=true;
+}
+function highlightWord(i){
+  document.querySelectorAll('#passage .w.cur').forEach(e=>e.classList.remove('cur'));
+  const el=document.querySelector(`#passage .w[data-i="${i}"]`);
+  if(el){ el.classList.add('cur'); el.scrollIntoView({block:'nearest',behavior:'smooth'}); }
+}
+$('#rate').addEventListener('input',e=>{$('#rateVal').textContent=e.target.value+'×';});
+$('#btnListenStop').addEventListener('click',stopListening);
+$('#btnListen').addEventListener('click',()=>{
+  stopListening();
+  if(!('speechSynthesis' in window)){ $('#status').textContent='Este navegador no soporta lectura en voz alta.'; return; }
+  const text=TEXTS[state.level.id][state.textIdx].body;
+  const rate=parseFloat($('#rate').value);
+  utter=new SpeechSynthesisUtterance(text);
+  utter.lang='es-PE'; utter.rate=rate;
+  const voices=speechSynthesis.getVoices().filter(v=>v.lang && v.lang.startsWith('es'));
+  if(voices.length) utter.voice=voices[0];
+  // mapa charIndex -> índice de palabra
+  const starts=[]; let pos=0;
+  state.words.forEach((w,j)=>{ const idx=text.indexOf(w.raw,pos); starts.push(idx<0?pos:idx); pos=(idx<0?pos:idx)+w.raw.length; });
+  let gotBoundary=false;
+  utter.onboundary=e=>{
+    if(typeof e.charIndex!=='number') return;
+    gotBoundary=true;
+    if(listenFallback){ clearInterval(listenFallback); listenFallback=null; }
+    let j=0; while(j+1<starts.length && starts[j+1]<=e.charIndex) j++;
+    highlightWord(j);
+  };
+  utter.onend=()=>{ stopListening(); $('#status').textContent='Lectura modelo terminada.'; };
+  // fallback: si el sistema no emite eventos de palabra, resaltar por tiempo estimado
+  setTimeout(()=>{
+    if(!gotBoundary && speechSynthesis.speaking){
+      let j=0;
+      const totalChars=text.length;
+      const cps=12*rate; // caracteres por segundo aprox.
+      const intervalMs=Math.max(150,(totalChars/state.words.length)/cps*1000);
+      listenFallback=setInterval(()=>{
+        j++; if(j>=state.words.length){ stopListening(); return; }
+        highlightWord(j);
+      }, intervalMs);
+    }
+  },1500);
+  speechSynthesis.speak(utter);
+  $('#btnListen').disabled=true; $('#btnListenStop').disabled=false;
+  $('#status').textContent='Escucha y sigue las palabras resaltadas…';
+});
+</script>
+<script>
+/* ===================== práctica: temporizador ===================== */
+function fmt(t){ const m=Math.floor(t/60), s=Math.floor(t%60); return m+':'+String(s).padStart(2,'0'); }
+function tick(){ $('#timer').textContent=fmt((Date.now()-state.t0)/1000); }
+
+function resetPractice(){
+  stopPractice(true);
+  state.matched=0; state.lastMatched=-1; state.manualErr=new Set(); state.endAt=-1; state.recogWords=[];
+  document.querySelectorAll('#passage .w').forEach(e=>e.classList.remove('ok','err','cur','end'));
+  $('#timer').textContent='0:00';
+  $('#status').textContent='Listo para empezar.';
+  $('#status').classList.remove('live');
+  $('#resultCard').classList.add('hidden');
+  $('#btnStart').disabled=false; $('#btnStop').disabled=true;
+}
+
+/* ---------- modo automático: Web Speech API ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+function startRecognition(){
+  if(!SR){ $('#status').textContent='Reconocimiento de voz no disponible aquí. Cambiando a modo manual.'; setMode('manual'); return false; }
+  try{
+    state.recog=new SR();
+    state.recog.lang='es-PE'; state.recog.continuous=true; state.recog.interimResults=true;
+    state.recog.onresult=e=>{
+      for(let i=e.resultIndex;i<e.results.length;i++){
+        const words=norm(e.results[i][0].transcript).split(/\s+/).filter(Boolean);
+        words.forEach(w=>consumeWord(w));
+      }
+      updateLiveStatus();
+    };
+    state.recog.onerror=e=>{
+      if(e.error==='not-allowed'||e.error==='service-not-allowed'){
+        $('#status').textContent='Micrófono no permitido o sin conexión. Cambia a modo manual para medir sin internet.';
+      }
+    };
+    state.recog.onend=()=>{ if(state.recogActive && state.running && state.mode==='auto'){ try{state.recog.start();}catch(_){ } } };
+    state.recog.start();
+    return true;
+  }catch(_){ return false; }
+}
+/* Empareja la palabra reconocida con la siguiente palabra del texto (ventana de 3) */
+function consumeWord(w){
+  if(!w || state.lastMatched>=state.words.length-1) return;
+  for(let look=state.lastMatched+1; look<=Math.min(state.lastMatched+3, state.words.length-1); look++){
+    if(state.words[look].norm===w){
+      for(let k=state.lastMatched+1;k<look;k++){ mark(k,'err'); } // omisiones
+      mark(look,'ok');
+      state.matched++; state.lastMatched=look;
+      if(look===state.words.length-1) finishPractice();
+      return;
+    }
+  }
+}
+function mark(i,cls){
+  const el=document.querySelector(`#passage .w[data-i="${i}"]`);
+  if(el){ el.classList.remove('ok','err'); el.classList.add(cls); }
+  if(cls==='ok') el.scrollIntoView({block:'nearest'});
+}
+function updateLiveStatus(){
+  const sec=(Date.now()-state.t0)/1000;
+  if(sec>3 && state.matched>0){
+    const wpm=Math.round(state.matched/sec*60);
+    $('#status').textContent=`Escuchando… ${state.matched} palabras correctas · ~${wpm} ppm en vivo`;
+    $('#status').classList.add('live');
+  }
+}
+
+/* ---------- modo manual: tutor toca errores ---------- */
+$('#passage').addEventListener('click',e=>{
+  const el=e.target.closest('.w'); if(!el) return;
+  if(state.mode!=='manual') return;
+  const i=+el.dataset.i;
+  if(state.endMarking){
+    state.endAt=i;
+    document.querySelectorAll('#passage .w.end').forEach(x=>x.classList.remove('end'));
+    el.classList.add('end');
+    state.endMarking=false; $('#btnEndAt').classList.remove('coral');
+    $('#status').textContent=`Fin de lectura marcado en la palabra ${i+1} de ${state.words.length}.`;
+    return;
+  }
+  if(state.manualErr.has(i)){ state.manualErr.delete(i); el.classList.remove('err'); }
+  else{ state.manualErr.add(i); el.classList.add('err'); }
+});
+$('#btnEndAt').addEventListener('click',()=>{
+  state.endMarking=!state.endMarking;
+  $('#btnEndAt').classList.toggle('coral',state.endMarking);
+  $('#status').textContent=state.endMarking?'Toca la ÚLTIMA palabra que leyó el estudiante.':'Listo.';
+});
+
+function setMode(m){
+  state.mode=m;
+  $('#btnMode').textContent = m==='auto' ? 'Modo: automático 🎙️' : 'Modo: manual 👆';
+  $('#btnEndAt').classList.toggle('hidden', m!=='manual');
+  $('#passage').classList.toggle('marking', m==='manual');
+  $('#modeNote').innerHTML = m==='auto'
+    ? '<b>Modo automático:</b> el navegador escucha al estudiante y marca las palabras leídas (requiere Chrome/Edge y conexión). Si no funciona, cambia a modo manual.'
+    : '<b>Modo manual (sin internet):</b> mientras el estudiante lee, el tutor <b>toca las palabras con error</b>. Al terminar, usa «Marcar fin de lectura» si no completó el texto.';
+}
+$('#btnMode').addEventListener('click',()=>{ if(!state.running) setMode(state.mode==='auto'?'manual':'auto'); });
+
+/* ---------- ciclo de práctica ---------- */
+$('#btnStart').addEventListener('click',()=>{
+  stopListening();
+  document.querySelectorAll('#passage .w').forEach(e=>e.classList.remove('ok','err','cur','end'));
+  state.matched=0; state.lastMatched=-1; state.manualErr=new Set(); state.endAt=-1; state.endMarking=false;
+  state.t0=Date.now(); state.running=true;
+  state.timerInt=setInterval(tick,250);
+  $('#btnStart').disabled=true; $('#btnStop').disabled=false;
+  $('#resultCard').classList.add('hidden');
+  if(state.mode==='auto'){
+    state.recogActive=startRecognition();
+    $('#status').textContent = state.recogActive ? 'Escuchando… el estudiante puede empezar a leer.' : 'Modo manual activo: toca los errores mientras lee.';
+  }else{
+    $('#status').textContent='Tiempo corriendo. Toca las palabras con error.';
+  }
+  $('#status').classList.add('live');
+});
+$('#btnStop').addEventListener('click',()=>finishPractice());
+
+function stopPractice(silent){
+  state.running=false; state.recogActive=false;
+  if(state.timerInt){ clearInterval(state.timerInt); state.timerInt=null; }
+  if(state.recog){ try{state.recog.stop();}catch(_){ } state.recog=null; }
+  if(!silent){ $('#btnStart').disabled=false; $('#btnStop').disabled=true; }
+  else{ $('#btnStart').disabled=false; $('#btnStop').disabled=true; }
+}
+
+function finishPractice(){
+  if(!state.running) return;
+  const secs=Math.max(1,(Date.now()-state.t0)/1000);
+  stopPractice();
+  const N=state.words.length;
+  let correct, readUpTo, errors;
+  if(state.mode==='auto'){
+    correct=state.matched;
+    readUpTo = state.lastMatched>=0 ? state.lastMatched+1 : N;
+    errors = readUpTo - correct;
+  }
+  if(state.mode==='manual'){
+    const end = state.endAt>=0 ? state.endAt : N-1;
+    readUpTo=end+1;
+    errors=[...state.manualErr].filter(i=>i<=end).length;
+    correct=Math.max(0,readUpTo-errors);
+    // pintar resultado
+    for(let i=0;i<readUpTo;i++){ if(!state.manualErr.has(i)) mark(i,'ok'); }
+  }
+  const wpm=Math.round(correct/secs*60);
+  const acc=readUpTo>0? Math.round(correct/readUpTo*100) : 0;
+  showResults(wpm,acc,errors,secs,correct,readUpTo);
+}
+
+/* ---------- resultados ---------- */
+let lastResult=null;
+function showResults(wpm,acc,errors,secs,correct,readUpTo){
+  const goal=state.level.goal;
+  $('#mWpm').textContent=wpm;
+  $('#mAcc').textContent=acc+'%';
+  $('#mErr').textContent=errors;
+  $('#mGoal').textContent=state.level.goalTxt;
+  const v=$('#verdict');
+  if(wpm>=goal && acc>=90){
+    v.className='verdict good';
+    v.textContent=`✅ ¡Meta cumplida! ${wpm} ppm (meta ${goal}) con ${acc}% de precisión. Puede postular al ascenso si lo sostiene 2 semanas.`;
+  }else if(wpm>=goal*0.8){
+    v.className='verdict mid';
+    v.textContent=`🟡 Cerca de la meta: ${wpm} ppm frente a ${goal}. Sigue practicando este texto y vuelve a medir.`;
+  }else{
+    v.className='verdict low';
+    v.textContent=`🔴 Aún en construcción: ${wpm} ppm frente a ${goal}. Refuerza con el modo «Escuchar modelo» y repite mañana.`;
+  }
+  $('#resultCard').classList.remove('hidden');
+  $('#resultCard').scrollIntoView({behavior:'smooth',block:'nearest'});
+  lastResult={
+    fecha:new Date().toISOString(),
+    estudiante:($('#studentName').value||'Sin nombre').trim(),
+    nivel:state.level.id, texto:TEXTS[state.level.id][state.textIdx].title,
+    modo:state.mode, segundos:Math.round(secs),
+    palabrasLeidas:readUpTo, correctas:correct, errores:errors,
+    wpm:wpm, precision:acc, meta:goal,
+  };
+}
+$('#btnRetry').addEventListener('click',()=>{ resetPractice(); window.scrollTo({top:0,behavior:'smooth'}); });
+$('#btnBack').addEventListener('click',()=>{ document.querySelector('[data-view="home"]').click(); });
+
+/* ===================== historial / progreso ===================== */
+const HKEY='sppc_lectura_historial';
+function loadHist(){ try{ return JSON.parse(localStorage.getItem(HKEY))||[]; }catch(_){ return []; } }
+function saveHist(h){ localStorage.setItem(HKEY,JSON.stringify(h)); }
+$('#btnSave').addEventListener('click',()=>{
+  if(!lastResult) return;
+  const h=loadHist(); h.push(lastResult); saveHist(h);
+  $('#btnSave').textContent='✔ Guardado';
+  setTimeout(()=>{$('#btnSave').textContent='💾 Guardar en progreso';},1500);
+});
+$('#btnClear').addEventListener('click',()=>{
+  if(confirm('¿Borrar todo el historial de esta máquina?')){ saveHist([]); renderHistory(); }
+});
+$('#btnCsv').addEventListener('click',()=>{
+  const h=loadHist(); if(!h.length){ alert('No hay sesiones guardadas.'); return; }
+  const head='fecha,estudiante,nivel,texto,modo,segundos,palabras_leidas,correctas,errores,wpm,precision,meta';
+  const rows=h.map(r=>[r.fecha,r.estudiante,r.nivel,`"${r.texto}"`,r.modo,r.segundos,r.palabrasLeidas,r.correctas,r.errores,r.wpm,r.precision,r.meta].join(','));
+  const blob=new Blob(['﻿'+head+'\n'+rows.join('\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download='sppc_lectura_progreso.csv'; a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+function renderHistory(){
+  const h=loadHist().slice().reverse();
+  const wrap=$('#histWrap');
+  if(!h.length){ wrap.innerHTML='<p class="hint">Aún no hay sesiones guardadas.</p>'; $('#chart').classList.add('hidden'); return; }
+  let html='<table><tr><th>Fecha</th><th>Estudiante</th><th>Nivel</th><th>Texto</th><th>PPM</th><th>Precisión</th><th>Meta</th></tr>';
+  h.slice(0,50).forEach(r=>{
+    const ok=r.wpm>=r.meta&&r.precision>=90, mid=!ok&&r.wpm>=r.meta*0.8;
+    const badge=ok?'<span class="badge g">✔ meta</span>':mid?'<span class="badge y">cerca</span>':'<span class="badge r">refuerzo</span>';
+    const f=new Date(r.fecha);
+    html+=`<tr><td>${f.toLocaleDateString('es-PE')} ${f.toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'})}</td><td>${r.estudiante}</td><td>${r.nivel}</td><td>${r.texto}</td><td><b>${r.wpm}</b></td><td>${r.precision}%</td><td>${badge}</td></tr>`;
+  });
+  html+='</table>';
+  wrap.innerHTML=html;
+  drawChart(loadHist());
+}
+
+function drawChart(h){
+  if(h.length<2){ $('#chart').classList.add('hidden'); return; }
+  const c=$('#chart'); c.classList.remove('hidden');
+  const ctx=c.getContext('2d');
+  const W=c.width=c.offsetWidth*2, H=c.height=380; ctx.scale(1,1);
+  ctx.clearRect(0,0,W,H);
+  const data=h.slice(-20);
+  const max=Math.max(...data.map(r=>r.wpm), ...data.map(r=>r.meta))*1.15;
+  const pad=50, bw=(W-pad*2)/data.length;
+  // línea de meta (usa la meta más reciente)
+  const meta=data[data.length-1].meta;
+  ctx.strokeStyle='#F28482'; ctx.setLineDash([8,6]); ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(pad, H-40-(meta/max)*(H-90)); ctx.lineTo(W-pad, H-40-(meta/max)*(H-90)); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#F28482'; ctx.font='bold 20px Trebuchet MS'; ctx.fillText('meta '+meta+' ppm', pad+6, H-46-(meta/max)*(H-90));
+  data.forEach((r,i)=>{
+    const x=pad+i*bw+bw*0.18, bh=(r.wpm/max)*(H-90);
+    ctx.fillStyle = r.wpm>=r.meta ? '#84A59D' : '#FFCE80';
+    const y=H-40-bh;
+    ctx.beginPath(); ctx.roundRect(x,y,bw*0.64,bh,8); ctx.fill();
+    ctx.fillStyle='#563E79'; ctx.font='bold 20px Trebuchet MS'; ctx.textAlign='center';
+    ctx.fillText(r.wpm, x+bw*0.32, y-8);
+  });
+  ctx.fillStyle='#8a7a99'; ctx.font='18px Trebuchet MS'; ctx.textAlign='left';
+  ctx.fillText('Palabras por minuto · últimas '+data.length+' sesiones', pad, 26);
+}
+
+/* ===================== init ===================== */
+if(!SR){ setMode('manual'); $('#btnMode').style.display='none';
+  $('#modeNote').innerHTML='<b>Modo manual (sin internet):</b> este navegador no tiene reconocimiento de voz. El tutor toca las palabras con error mientras el estudiante lee.'; }
+if('speechSynthesis' in window){ speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged=()=>speechSynthesis.getVoices(); }
+renderLevels();
+</script>
+</body>
+</html>
