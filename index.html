@@ -198,7 +198,7 @@
     </div>
     <div>
       <h1>SPPC · Entrenador de Lectura</h1>
-      <div class="sub">SISTEMA PIRAMIDAL DE PRÁCTICA CONTINUA — PROTOTIPO 1.4.2</div>
+      <div class="sub">SISTEMA PIRAMIDAL DE PRÁCTICA CONTINUA — PROTOTIPO 1.5</div>
     </div>
     <span class="tag">100 % local · sin internet</span>
   </header>
@@ -277,15 +277,16 @@
       <div class="statusline" style="margin-bottom:10px">🎭 <b>Paquetes de voz:</b> descarga voces naturales en Windows 11 (Configuración → Accesibilidad → Narrador → «Agregar voces naturales»: hay voces masculinas y femeninas en Español Perú, México y España), reinicia el navegador y elígela en el selector. Combina la voz con el <b>tono</b>: agudo = niño, grave = narrador de aventuras.</div>
 
       <div class="note" id="modeNote">
-        <b>Modo medición:</b> pulsa «Comenzar lectura» y el estudiante lee en voz alta.
-        En modo <b>automático</b> el navegador escucha y marca las palabras (requiere Chrome/Edge con internet).
-        En modo <b>manual</b> el tutor <b>toca las palabras con error</b> y funciona sin internet.
+        <b>Modo guiado en eco (recomendado):</b> al pulsar «Comenzar lectura», la voz modelo lee el texto
+        y resalta cada palabra como karaoke; el estudiante <b>repite en voz alta</b> siguiendo el ritmo —
+        vista, oído y voz a la vez, sin interrupciones. El tutor escucha y <b>toca las palabras que salgan mal</b>
+        sin detener la lectura. La progresión es subir la velocidad poco a poco.
       </div>
 
       <div class="toolbar">
         <button class="btn coral big" id="btnStart">● Comenzar lectura</button>
         <button class="btn big" id="btnStop" disabled>■ Terminar</button>
-        <button class="btn ghost" id="btnMode">Modo: automático 🎙️</button>
+        <button class="btn ghost" id="btnMode">Modo: guiado en eco 👂🗣</button>
         <button class="btn ghost hidden" id="btnEndAt">📍 Marcar fin de lectura</button>
       </div>
 
@@ -328,7 +329,7 @@
     </div>
   </section>
 
-  <footer>SPPC · Módulo de lectura — prototipo local v1.4.2 · Los datos se guardan solo en este dispositivo.</footer>
+  <footer>SPPC · Módulo de lectura — prototipo local v1.5 · Los datos se guardan solo en este dispositivo.</footer>
 </div>
 <script>
 /* ================================================================
@@ -383,8 +384,10 @@ const state = {
   level: LEVELS[0],
   textIdx: 0,
   words: [],          // [{raw, norm}]
-  mode: 'auto',       // 'auto' | 'manual'
+  practiceMode: 'guiado', // 'guiado' (eco con voz modelo) | 'libre' (medición sin modelo)
+  mode: 'auto',       // dentro de 'libre': 'auto' | 'manual'
   running: false,
+  curWordIdx: -1,     // última palabra leída por la voz modelo (modo guiado)
   t0: 0, timerInt: null,
   matched: 0, lastMatched: -1,
   manualErr: new Set(), endAt: -1, endMarking:false,
@@ -824,12 +827,17 @@ function fixSyllableSpeech(s){
 }
 
 /* ---------- lectura secuencial (karaoke exacto) ---------- */
-function speakSeq(items, voice, rate){
+function speakSeq(items, voice, rate, onDone){
   seqCancel=false; let i=0;
   function next(){
     if(seqCancel) return;
-    if(i>=items.length){ stopListening(); $('#status').textContent='Lectura modelo terminada.'; return; }
+    if(i>=items.length){
+      if(onDone){ onDone(); }
+      else{ stopListening(); $('#status').textContent='Lectura modelo terminada.'; }
+      return;
+    }
     const it=items[i];
+    state.curWordIdx=it.wordIndex;
     highlightWord(it.wordIndex);
     const u=new SpeechSynthesisUtterance(it.text);
     u.lang='es-PE'; u.rate=rate; u.pitch=voicePitch;
@@ -839,6 +847,23 @@ function speakSeq(items, voice, rate){
     speechSynthesis.speak(u);
   }
   next();
+}
+
+/* Ítems hablados según el modo de escucha (palabra por palabra o por sílabas) */
+function buildSpeechItems(mode){
+  const pause=parseInt($('#pause').value,10);
+  const items=[];
+  state.words.forEach((w,wi)=>{
+    if(mode==='palabra'){
+      items.push({ text:speakText(w.raw), wordIndex:wi, gapAfter:pause });
+    }else{
+      const syl=syllabify(w.raw);
+      syl.forEach((s,si)=>{
+        items.push({ text:speakText(fixSyllableSpeech(s)), wordIndex:wi, gapAfter: si===syl.length-1 ? pause : Math.max(180, Math.round(pause*0.45)) });
+      });
+    }
+  });
+  return items;
 }
 
 $('#btnListen').addEventListener('click',()=>{
@@ -881,18 +906,7 @@ $('#btnListen').addEventListener('click',()=>{
     speechSynthesis.speak(utter);
   }else{
     // karaoke exacto: palabra por palabra o por sílabas, con pausas
-    const items=[];
-    state.words.forEach((w,wi)=>{
-      if(listenMode==='palabra'){
-        items.push({ text:speakText(w.raw), wordIndex:wi, gapAfter:pause });
-      }else{
-        const syl=syllabify(w.raw);
-        syl.forEach((s,si)=>{
-          items.push({ text:speakText(fixSyllableSpeech(s)), wordIndex:wi, gapAfter: si===syl.length-1 ? pause : Math.max(180, Math.round(pause*0.45)) });
-        });
-      }
-    });
-    speakSeq(items, voice, rate);
+    speakSeq(buildSpeechItems(listenMode), voice, rate);
   }
   $('#btnListen').disabled=true; $('#btnListenStop').disabled=false;
   $('#status').textContent='Escucha y sigue las palabras resaltadas…';
@@ -917,7 +931,7 @@ function resetPractice(){
 /* ---------- modo automático: Web Speech API ---------- */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 function startRecognition(){
-  if(!SR){ $('#status').textContent='Reconocimiento de voz no disponible aquí. Cambiando a modo manual.'; setMode('manual'); return false; }
+  if(!SR){ $('#status').textContent='Reconocimiento de voz no disponible aquí. Cambiando a modo libre con tutor.'; setPracticeMode('libre','manual'); return false; }
   try{
     state.recog=new SR();
     state.recog.lang='es-PE'; state.recog.continuous=true; state.recog.interimResults=true;
@@ -965,10 +979,13 @@ function updateLiveStatus(){
   }
 }
 
-/* ---------- modo manual: tutor toca errores ---------- */
+/* ---------- marcar errores: tutor toca palabras (guiado o libre-manual) ---------- */
 $('#passage').addEventListener('click',e=>{
   const el=e.target.closest('.w'); if(!el) return;
-  if(state.mode!=='manual') return;
+  // En modo guiado el tutor marca mientras la voz modelo lee (sin detenerla);
+  // en modo libre solo se marca con el submodo manual.
+  if(state.practiceMode==='guiado'){ if(!state.running) return; }
+  else if(state.mode!=='manual') return;
   const i=+el.dataset.i;
   if(state.endMarking){
     state.endAt=i;
@@ -987,29 +1004,61 @@ $('#btnEndAt').addEventListener('click',()=>{
   $('#status').textContent=state.endMarking?'Toca la ÚLTIMA palabra que leyó el estudiante.':'Listo.';
 });
 
-function setMode(m){
-  state.mode=m;
-  $('#btnMode').textContent = m==='auto' ? 'Modo: automático 🎙️' : 'Modo: manual 👆';
-  $('#btnEndAt').classList.toggle('hidden', m!=='manual');
-  $('#passage').classList.toggle('marking', m==='manual');
-  $('#modeNote').innerHTML = m==='auto'
-    ? '<b>Modo automático:</b> el navegador escucha al estudiante y marca las palabras leídas (requiere Chrome/Edge y conexión). Si no funciona, cambia a modo manual.'
-    : '<b>Modo manual (sin internet):</b> mientras el estudiante lee, el tutor <b>toca las palabras con error</b>. Al terminar, usa «Marcar fin de lectura» si no completó el texto.';
+/* v1.5 — tres modos de práctica: guiado en eco (modelo + repetición + karaoke),
+   libre con micrófono y libre con tutor (diagnósticos puntuales) */
+function setPracticeMode(pm, sub){
+  state.practiceMode=pm;
+  if(sub) state.mode=sub;
+  const label = pm==='guiado'
+    ? 'Modo: guiado en eco 👂🗣'
+    : (state.mode==='auto' ? 'Modo: libre · micrófono 🎙️' : 'Modo: libre · tutor marca ✋');
+  $('#btnMode').textContent=label;
+  $('#btnEndAt').classList.toggle('hidden', !(pm==='libre' && state.mode==='manual'));
+  $('#passage').classList.toggle('marking', pm==='guiado' || (pm==='libre' && state.mode==='manual'));
+  $('#modeNote').innerHTML = pm==='guiado'
+    ? '<b>Modo guiado en eco (recomendado):</b> la voz modelo lee el texto y resalta cada palabra como karaoke; el estudiante <b>repite en voz alta</b> siguiendo el ritmo — vista, oído y voz a la vez, sin interrupciones. El tutor escucha y <b>toca las palabras que salgan mal</b> sin detener la lectura. Al terminar verás las palabras a reforzar. La progresión es subir la velocidad poco a poco.'
+    : state.mode==='auto'
+      ? '<b>Modo libre con micrófono:</b> el estudiante lee solo y el navegador marca lo que reconoce (Chrome/Edge con internet). Úsalo solo para diagnósticos puntuales — el entrenamiento diario es en modo guiado.'
+      : '<b>Modo libre con tutor:</b> el estudiante lee solo; el tutor toca las palabras con error y marca el fin de lectura si no termina. Funciona sin internet.';
 }
-$('#btnMode').addEventListener('click',()=>{ if(!state.running) setMode(state.mode==='auto'?'manual':'auto'); });
+$('#btnMode').addEventListener('click',()=>{
+  if(state.running) return;
+  if(state.practiceMode==='guiado') setPracticeMode('libre','auto');
+  else if(state.mode==='auto') setPracticeMode('libre','manual');
+  else setPracticeMode('guiado');
+});
+setPracticeMode('guiado');
 
 /* ---------- ciclo de práctica ---------- */
 $('#btnStart').addEventListener('click',()=>{
   stopListening();
   document.querySelectorAll('#passage .w').forEach(e=>e.classList.remove('ok','err','cur','end'));
   state.matched=0; state.lastMatched=-1; state.manualErr=new Set(); state.endAt=-1; state.endMarking=false;
+  state.curWordIdx=-1;
   state.t0=Date.now(); state.running=true;
   state.timerInt=setInterval(tick,250);
   $('#btnStart').disabled=true; $('#btnStop').disabled=false;
   $('#resultCard').classList.add('hidden');
-  if(state.mode==='auto'){
+  if(state.practiceMode==='guiado'){
+    // Lectura guiada en eco: la voz modelo lee con karaoke y el estudiante repite.
+    // El tutor toca los errores sin detener la lectura. Al terminar el modelo, se
+    // cierra la sesión sola (sin interrupciones para el estudiante).
+    if(!('speechSynthesis' in window)){
+      $('#status').textContent='Este navegador no tiene voz. Cambiando a modo libre con tutor.';
+      setPracticeMode('libre','manual');
+      state.running=false; clearInterval(state.timerInt); state.timerInt=null;
+      $('#btnStart').disabled=false; $('#btnStop').disabled=true;
+      return;
+    }
+    const rate=parseFloat($('#rate').value);
+    const voice=pickVoice();
+    speechSynthesis.cancel();
+    const items=buildSpeechItems(listenMode==='corrido'?'palabra':listenMode);
+    speakSeq(items, voice, rate, ()=>{ if(state.running) finishPractice(); });
+    $('#status').textContent='Guiado en eco: el estudiante repite siguiendo la voz y el resaltado. Toca las palabras que lea mal — la lectura no se detiene.';
+  }else if(state.mode==='auto'){
     state.recogActive=startRecognition();
-    $('#status').textContent = state.recogActive ? 'Escuchando… el estudiante puede empezar a leer.' : 'Modo manual activo: toca los errores mientras lee.';
+    $('#status').textContent = state.recogActive ? 'Escuchando… el estudiante puede empezar a leer.' : 'Modo libre con tutor activo: toca los errores mientras lee.';
   }else{
     $('#status').textContent='Tiempo corriendo. Toca las palabras con error.';
   }
@@ -1021,22 +1070,29 @@ function stopPractice(silent){
   state.running=false; state.recogActive=false;
   if(state.timerInt){ clearInterval(state.timerInt); state.timerInt=null; }
   if(state.recog){ try{state.recog.stop();}catch(_){ } state.recog=null; }
-  if(!silent){ $('#btnStart').disabled=false; $('#btnStop').disabled=true; }
-  else{ $('#btnStart').disabled=false; $('#btnStop').disabled=true; }
+  if(state.practiceMode==='guiado'){ seqCancel=true; speechSynthesis.cancel(); }
+  $('#btnStart').disabled=false; $('#btnStop').disabled=true;
 }
 
 function finishPractice(){
   if(!state.running) return;
   const secs=Math.max(1,(Date.now()-state.t0)/1000);
   stopPractice();
+  document.querySelectorAll('#passage .w.cur').forEach(e=>e.classList.remove('cur'));
   const N=state.words.length;
   let correct, readUpTo, errors;
-  if(state.mode==='auto'){
+  if(state.practiceMode==='guiado'){
+    // el fin de la sesión es donde llegó la voz modelo (todo el texto si terminó)
+    const end = state.curWordIdx>=0 ? state.curWordIdx : N-1;
+    readUpTo=end+1;
+    errors=[...state.manualErr].filter(i=>i<=end).length;
+    correct=Math.max(0,readUpTo-errors);
+    for(let i=0;i<readUpTo;i++){ if(!state.manualErr.has(i)) mark(i,'ok'); }
+  }else if(state.mode==='auto'){
     correct=state.matched;
     readUpTo = state.lastMatched>=0 ? state.lastMatched+1 : N;
     errors = readUpTo - correct;
-  }
-  if(state.mode==='manual'){
+  }else{
     const end = state.endAt>=0 ? state.endAt : N-1;
     readUpTo=end+1;
     errors=[...state.manualErr].filter(i=>i<=end).length;
@@ -1058,7 +1114,19 @@ function showResults(wpm,acc,errors,secs,correct,readUpTo){
   $('#mErr').textContent=errors;
   $('#mGoal').textContent=state.level.goalTxt;
   const v=$('#verdict');
-  if(wpm>=goal && acc>=90){
+  if(state.practiceMode==='guiado'){
+    // guiado en eco: no hay aprobado/reprobado — solo la velocidad ajustada y qué reforzar
+    if(errors===0){
+      v.className='verdict good';
+      v.textContent=`✅ Sesión limpia a ${wpm} ppm, sin errores. Sube un paso la velocidad en la próxima sesión — esa es la progresión (meta del nivel: ${goal} ppm).`;
+    }else if(acc>=90){
+      v.className='verdict mid';
+      v.textContent=`🟡 ${wpm} ppm con ${errors} error(es) (palabras en rojo). Repite este mismo texto a la misma velocidad mañana; si sale limpio, sube velocidad.`;
+    }else{
+      v.className='verdict low';
+      v.textContent=`🔴 ${errors} errores a ${wpm} ppm. Baja un paso la velocidad o repasa primero en «Escuchar modelo» por sílabas, y repite la sesión.`;
+    }
+  }else if(wpm>=goal && acc>=90){
     v.className='verdict good';
     v.textContent=`✅ ¡Meta cumplida! ${wpm} ppm (meta ${goal}) con ${acc}% de precisión. Puede postular al ascenso si lo sostiene 2 semanas.`;
   }else if(wpm>=goal*0.8){
@@ -1074,7 +1142,7 @@ function showResults(wpm,acc,errors,secs,correct,readUpTo){
     fecha:new Date().toISOString(),
     estudiante:($('#studentName').value||'Sin nombre').trim(),
     nivel:state.level.id, texto:TEXTS[state.level.id][state.textIdx].title,
-    modo:state.mode, segundos:Math.round(secs),
+    modo:state.practiceMode==='guiado'?'guiado-eco':state.mode, segundos:Math.round(secs),
     palabrasLeidas:readUpTo, correctas:correct, errores:errors,
     wpm:wpm, precision:acc, meta:goal,
   };
@@ -1149,8 +1217,9 @@ function drawChart(h){
 }
 
 /* ===================== init ===================== */
-if(!SR){ setMode('manual'); $('#btnMode').style.display='none';
-  $('#modeNote').innerHTML='<b>Modo manual (sin internet):</b> este navegador no tiene reconocimiento de voz. El tutor toca las palabras con error mientras el estudiante lee.'; }
+// El modo guiado en eco no necesita reconocimiento de voz (solo la voz modelo);
+// si el navegador no tiene micrófono, el ciclo de modos solo omite el submodo libre con micrófono.
+if(!SR && state.practiceMode==='libre' && state.mode==='auto') setPracticeMode('libre','manual');
 if('speechSynthesis' in window){
   loadVoices();
   speechSynthesis.onvoiceschanged=loadVoices;
