@@ -6,8 +6,9 @@ Prototipo local del módulo de lectura del **Sistema Piramidal de Práctica Cont
 
 Un único archivo HTML autocontenido (`index.html`) para entrenar y medir fluidez lectora:
 
-- **Biblioteca graduada**: textos en español por nivel (L1 a L6) con metas de velocidad según el plan SPPC (40 → 200+ palabras por minuto).
-- **Escuchar modelo**: lectura en voz alta con resaltado palabra por palabra (karaoke) y velocidad ajustable. Funciona sin internet.
+- **Biblioteca graduada**: textos en español por nivel (L1 a L6) con metas de velocidad según el plan SPPC (20 → 200+ palabras por minuto).
+- **Escuchar modelo**: lectura en voz alta con resaltado palabra por palabra (karaoke) en 3 modos: **Corrido**, **Palabra por palabra** y **Por sílabas** (gar·ban·zo) con pausa ajustable entre palabras. Funciona sin internet.
+- **Voces y géneros literarios**: selector de voz (instala voces naturales en Windows 11: Configuración → Accesibilidad → Narrador → «Agregar voces naturales»), control de **tono** y perfiles rápidos: *Aventura (voz grave)*, *Novela juvenil (femenina)*, *Cuento infantil (tono niño)*.
 - **Practicar con medición**: cronómetro + dos modos de evaluación:
   - *Automático*: reconocimiento de voz del navegador (Chrome/Edge, requiere internet).
   - *Manual (offline)*: el tutor toca las palabras con error; el sistema calcula ppm, precisión y veredicto contra la meta.
