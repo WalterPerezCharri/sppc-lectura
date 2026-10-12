@@ -198,7 +198,7 @@
     </div>
     <div>
       <h1>SPPC · Entrenador de Lectura</h1>
-      <div class="sub">SISTEMA PIRAMIDAL DE PRÁCTICA CONTINUA — PROTOTIPO 1.2</div>
+      <div class="sub">SISTEMA PIRAMIDAL DE PRÁCTICA CONTINUA — PROTOTIPO 1.2.1</div>
     </div>
     <span class="tag">100 % local · sin internet</span>
   </header>
@@ -318,7 +318,7 @@
     </div>
   </section>
 
-  <footer>SPPC · Módulo de lectura — prototipo local v1.2 · Los datos se guardan solo en este dispositivo.</footer>
+  <footer>SPPC · Módulo de lectura — prototipo local v1.2.1 · Los datos se guardan solo en este dispositivo.</footer>
 </div>
 <script>
 /* ================================================================
@@ -544,6 +544,14 @@ function syllabify(word){
   return syl.filter(Boolean);
 }
 
+/* ---------- texto a hablar: corrige lecturas ambiguas ---------- */
+function speakText(w){
+  // la conjunción "y" aislada la TTS la nombra como letra ("i griega");
+  // se reemplaza por "i", que suena idéntico a la conjunción
+  if(/^y$/i.test(w.trim())) return 'i';
+  return w;
+}
+
 /* ---------- lectura secuencial (karaoke exacto) ---------- */
 function speakSeq(items, voice, rate){
   seqCancel=false; let i=0;
@@ -605,11 +613,11 @@ $('#btnListen').addEventListener('click',()=>{
     const items=[];
     state.words.forEach((w,wi)=>{
       if(listenMode==='palabra'){
-        items.push({ text:w.raw, wordIndex:wi, gapAfter:pause });
+        items.push({ text:speakText(w.raw), wordIndex:wi, gapAfter:pause });
       }else{
         const syl=syllabify(w.raw);
         syl.forEach((s,si)=>{
-          items.push({ text:s, wordIndex:wi, gapAfter: si===syl.length-1 ? pause : Math.max(180, Math.round(pause*0.45)) });
+          items.push({ text:speakText(s), wordIndex:wi, gapAfter: si===syl.length-1 ? pause : Math.max(180, Math.round(pause*0.45)) });
         });
       }
     });
