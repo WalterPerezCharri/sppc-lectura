@@ -9,10 +9,32 @@ Un único archivo HTML autocontenido (`index.html`) para entrenar y medir fluide
 - **Biblioteca graduada**: textos en español por nivel (L1 a L6) con metas de velocidad según el plan SPPC (20 → 200+ palabras por minuto).
 - **Escuchar modelo**: lectura en voz alta con resaltado palabra por palabra (karaoke) en 3 modos: **Corrido**, **Palabra por palabra** y **Por sílabas** (gar·ban·zo) con pausa ajustable entre palabras. Funciona sin internet.
 - **Voces y géneros literarios**: selector de voz (instala voces naturales en Windows 11: Configuración → Accesibilidad → Narrador → «Agregar voces naturales»), control de **tono** y perfiles rápidos: *Aventura (voz grave)*, *Novela juvenil (femenina)*, *Cuento infantil (tono niño)*.
-- **Practicar con medición**: cronómetro + dos modos de evaluación:
-  - *Automático*: reconocimiento de voz del navegador (Chrome/Edge, requiere internet).
-  - *Manual (offline)*: el tutor toca las palabras con error; el sistema calcula ppm, precisión y veredicto contra la meta.
+- **Práctica guiada en eco** (modo por defecto): al pulsar «Comenzar lectura», la voz modelo lee con karaoke y el estudiante **repite en voz alta** siguiendo el ritmo — vista, oído y voz a la vez, sin interrupciones. El tutor escucha y **toca las palabras con error sin detener la lectura**; al final se muestran las palabras a reforzar. La progresión consiste en subir la velocidad poco a poco.
+- **Modos libres (solo diagnóstico)**: el estudiante lee sin modelo — con reconocimiento de voz del navegador (Chrome/Edge, requiere internet) o con marcado manual del tutor (offline).
 - **Progreso**: historial local por máquina, gráfico de evolución y exportación a CSV.
+- **Biblioteca externa**: carga cuentos y libros desde archivos **`.pdf`** o `.txt` (selección múltiple). Los libros largos se dividen en partes de ~250 palabras. Los textos cargados duran solo la sesión — la biblioteca viaja en tus archivos (USB, correo), no en la máquina. Botón **«❓ Instrucciones de carga»** con las reglas numeradas.
+- **Acceso rápido**: el programa recuerda los **últimos 10 archivos abiertos** y permite recargarlos con un clic (Chrome/Edge guardan un acceso autorizado al archivo; si el archivo se movió o borró, el acceso se retira solo de la lista).
+
+## Archivos PDF
+
+- Se extrae el texto de PDFs generados desde Word, Google Docs, LibreOffice, etc.
+- Los libros largos se dividen automáticamente en partes de práctica.
+- El título del texto será el nombre del archivo (consejo: `El perro fiel L3.pdf`).
+- **Excepción**: un PDF *escaneado* (fotos de páginas, sin texto seleccionable) no se puede leer — la app lo avisará. Para esos casos, conviértelos primero a texto (OCR).
+
+## Formato de archivos de texto (.txt)
+
+```text
+NIVEL: L2
+TITULO: El mercado del sábado
+
+Aquí va el cuento completo…
+```
+
+- `NIVEL:` puede ser L1 a L6 (si se omite, usa el nivel elegido en pantalla).
+- `TITULO:` es opcional (si se omite, usa el nombre del archivo).
+- Si el texto supera las 500 palabras, se divide automáticamente en partes de práctica.
+- Desde la app puedes descargar `plantilla_cuento_sppc.txt` como ejemplo.
 
 ## Uso
 

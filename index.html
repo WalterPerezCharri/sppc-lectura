@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPPC Lectura — Entrenador de fluidez lectora</title>
+<style>
+  :root{
+    --paper:#F7EDE2;
+    --paper2:#FFF9F1;
+    --ink:#563E79;
+    --body:#3A3340;
+    --coral:#F28482;
+    --sage:#84A59D;
+    --sage-d:#5E857D;
+    --sun:#FFCE80;
+    --soft:#F5CAC3;
+    --line:#E4D5C5;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:'Trebuchet MS','Segoe UI',Verdana,system-ui,sans-serif;
+    background:var(--paper);
+    color:var(--body);
+    min-height:100vh;
+    line-height:1.55;
+  }
+  .wrap{max-width:960px;margin:0 auto;padding:20px 18px 80px}
+  header{
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    padding:18px 4px 10px;
+  }
+  .logo{
+    width:52px;height:52px;flex:0 0 52px;border-radius:16px;
+    background:var(--ink);display:grid;place-items:center;
+    box-shadow:4px 4px 0 var(--soft);
+  }
+  .logo svg{width:30px;height:30px}
+  h1{font-size:1.45rem;color:var(--ink);line-height:1.2}
+  .sub{font-size:.85rem;color:#8a7a99;font-weight:bold;letter-spacing:.04em}
+  .tag{
+    margin-left:auto;background:var(--sun);color:#5a4310;
+    font-size:.72rem;font-weight:bold;padding:6px 12px;border-radius:999px;
+    border:2px solid var(--ink);
+  }
+
+  /* ---------- nav ---------- */
+  nav{display:flex;gap:8px;margin:14px 0 20px;flex-wrap:wrap}
+  .tab{
+    font-family:inherit;font-size:.95rem;font-weight:bold;cursor:pointer;
+    padding:10px 20px;border-radius:999px;border:2px solid var(--ink);
+    background:var(--paper2);color:var(--ink);
+    box-shadow:3px 3px 0 var(--ink);
+    transition:transform .08s ease, box-shadow .08s ease;
+  }
+  .tab:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  .tab.on{background:var(--ink);color:#fff}
+  .tab:disabled{opacity:.45;cursor:not-allowed}
+
+  /* ---------- cards ---------- */
+  .card{
+    background:var(--paper2);
+    border:2px solid var(--line);
+    border-radius:22px;
+    padding:22px;
+    margin-bottom:18px;
+  }
+  .card h2{color:var(--ink);font-size:1.15rem;margin-bottom:6px}
+  .card .hint{font-size:.85rem;color:#8a7a99;margin-bottom:14px}
+  .rules{margin:0 0 14px 22px;font-size:.9rem;color:var(--body);line-height:1.5}
+  .rules li{margin-bottom:6px}
+  .rules li::marker{color:var(--purple);font-weight:bold}
+  .recentfile{font-size:.85rem;padding:7px 12px}
+  .recentdead{opacity:.55;font-size:.82rem;padding:7px 4px}
+
+  /* ---------- level pills ---------- */
+  .levels{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+  .lvl{
+    font-family:inherit;cursor:pointer;font-weight:bold;font-size:.88rem;
+    border:2px solid var(--ink);border-radius:14px;padding:10px 14px;
+    background:#fff;color:var(--ink);
+    box-shadow:3px 3px 0 var(--ink);
+    transition:transform .08s, box-shadow .08s;
+  }
+  .lvl:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  .lvl.on{background:var(--coral);color:#fff}
+  .lvl small{display:block;font-weight:normal;font-size:.68rem;opacity:.85}
+
+  .texts{display:grid;gap:10px}
+  .textitem{
+    display:flex;align-items:center;gap:14px;cursor:pointer;
+    background:#fff;border:2px solid var(--line);border-radius:16px;
+    padding:14px 16px;text-align:left;font-family:inherit;width:100%;
+    transition:border-color .15s;
+  }
+  .textitem:hover{border-color:var(--ink)}
+  .textitem .n{
+    width:40px;height:40px;flex:0 0 40px;border-radius:12px;
+    background:var(--soft);display:grid;place-items:center;
+    font-weight:bold;color:var(--ink);font-size:1.05rem;
+  }
+  .textitem b{color:var(--ink);display:block;font-size:1rem}
+  .textitem span{font-size:.8rem;color:#8a7a99}
+
+  /* ---------- reader ---------- */
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+  .btn{
+    font-family:inherit;font-size:.95rem;font-weight:bold;cursor:pointer;
+    padding:12px 22px;border-radius:14px;border:2px solid var(--ink);
+    background:var(--sun);color:#43320a;
+    box-shadow:4px 4px 0 var(--ink);
+    transition:transform .08s, box-shadow .08s;
+  }
+  .btn:active{transform:translate(3px,3px);box-shadow:1px 1px 0 var(--ink)}
+  .btn.sage{background:var(--sage);color:#fff}
+  .btn.coral{background:var(--coral);color:#fff}
+  .btn.ghost{background:#fff;color:var(--ink)}
+  .btn:disabled{opacity:.45;cursor:not-allowed;box-shadow:2px 2px 0 var(--ink)}
+  .btn.big{font-size:1.1rem;padding:16px 30px;border-radius:18px}
+
+  .speedrow{display:flex;align-items:center;gap:10px;font-size:.85rem;font-weight:bold;color:var(--ink)}
+  input[type=range]{accent-color:var(--coral);width:130px}
+
+  .passage{
+    background:#fff;border:2px solid var(--line);border-radius:18px;
+    padding:26px 24px;margin-bottom:18px;
+    font-size:1.45rem;line-height:2.15;color:var(--body);
+    user-select:none;
+  }
+  .passage.size-s{font-size:1.15rem;line-height:2}
+  .w{
+    padding:2px 3px;border-radius:8px;cursor:default;
+    transition:background .12s;
+  }
+  .passage.marking .w{cursor:pointer}
+  .w.cur{background:var(--sun);box-shadow:0 2px 0 var(--coral)}
+  .w.ok{background:#DCE9E4;color:#2f5d52}
+  .w.err{background:var(--soft);color:#a03a37;text-decoration:underline wavy var(--coral)}
+  .w.end{box-shadow:inset 0 -4px 0 var(--ink)}
+
+  .timer{
+    font-size:2.4rem;font-weight:bold;color:var(--ink);
+    font-variant-numeric:tabular-nums;letter-spacing:.02em;
+  }
+  .statusline{font-size:.9rem;color:#8a7a99;min-height:1.4em;font-weight:bold}
+  .statusline.live{color:var(--sage-d)}
+
+  /* ---------- results ---------- */
+  .results{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:16px 0}
+  .metric{
+    background:#fff;border:2px solid var(--line);border-radius:16px;
+    padding:14px;text-align:center;
+  }
+  .metric .v{font-size:1.9rem;font-weight:bold;color:var(--ink);font-variant-numeric:tabular-nums}
+  .metric .l{font-size:.75rem;font-weight:bold;color:#8a7a99;text-transform:uppercase;letter-spacing:.05em}
+  .verdict{
+    border-radius:16px;padding:14px 18px;font-weight:bold;font-size:1rem;
+    border:2px solid var(--ink);margin-bottom:14px;
+  }
+  .verdict.good{background:#DCE9E4;color:#2f5d52}
+  .verdict.mid{background:#FDF0D3;color:#7a5a10}
+  .verdict.low{background:var(--soft);color:#a03a37}
+
+  /* ---------- history ---------- */
+  table{width:100%;border-collapse:collapse;font-size:.88rem;background:#fff;border-radius:14px;overflow:hidden}
+  th{background:var(--ink);color:#fff;text-align:left;padding:10px 12px;font-size:.78rem;letter-spacing:.03em}
+  td{padding:9px 12px;border-bottom:1px solid var(--line)}
+  tr:last-child td{border-bottom:none}
+  .badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:.72rem;font-weight:bold}
+  .badge.g{background:#DCE9E4;color:#2f5d52}
+  .badge.y{background:#FDF0D3;color:#7a5a10}
+  .badge.r{background:var(--soft);color:#a03a37}
+  canvas.chart{width:100%;height:190px;background:#fff;border:2px solid var(--line);border-radius:16px;margin-top:14px}
+
+  .namein{
+    font-family:inherit;font-size:1rem;padding:11px 14px;border-radius:12px;
+    border:2px solid var(--line);background:#fff;color:var(--body);width:100%;max-width:320px;
+  }
+  .namein:focus{outline:none;border-color:var(--ink)}
+  label.fl{font-size:.8rem;font-weight:bold;color:var(--ink);display:block;margin:10px 0 5px}
+
+  .note{
+    background:#FDF0D3;border:2px dashed #d8b45a;border-radius:14px;
+    padding:12px 16px;font-size:.84rem;color:#7a5a10;margin-bottom:16px;
+  }
+  .seg{display:inline-flex;border:2px solid var(--ink);border-radius:14px;overflow:hidden;box-shadow:3px 3px 0 var(--ink)}
+  .segb{font-family:inherit;font-weight:bold;font-size:.85rem;padding:10px 14px;background:#fff;color:var(--ink);border:none;cursor:pointer;border-right:2px solid var(--ink)}
+  .segb:last-child{border-right:none}
+  .segb.on{background:var(--ink);color:#fff}
+  .vselect{font-family:inherit;font-size:.85rem;font-weight:bold;padding:10px 12px;border-radius:12px;border:2px solid var(--line);background:#fff;color:var(--ink);max-width:260px}
+  .hidden{display:none!important}
+  footer{margin-top:34px;text-align:center;font-size:.75rem;color:#a293ad}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#F7EDE2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19a2 2 0 0 0 2 2h13"/><path d="M9 7h6M9 11h4"/>
+      </svg>
+    </div>
+    <div>
+      <h1>SPPC · Entrenador de Lectura</h1>
+      <div class="sub">SISTEMA PIRAMIDAL DE PRÁCTICA CONTINUA — PROTOTIPO 1.6</div>
+    </div>
+    <span class="tag">100 % local · sin internet</span>
+  </header>
+
+  <nav>
+    <button class="tab on" data-view="home">📖 Textos</button>
+    <button class="tab" data-view="read" id="tabRead" disabled>🎙️ Práctica</button>
+    <button class="tab" data-view="hist">📈 Progreso</button>
+  </nav>
+
+  <!-- ============ VISTA: TEXTOS ============ -->
+  <section id="view-home">
+    <div class="card">
+      <h2>¿Quién practica hoy?</h2>
+      <label class="fl" for="studentName">Nombre del estudiante</label>
+      <input class="namein" id="studentName" placeholder="Escribe el nombre…" autocomplete="off">
+    </div>
+    <div class="card">
+      <h2>📂 Cargar cuentos y libros externos</h2>
+      <div class="toolbar">
+        <button class="btn sage" id="btnLoadFile">📂 Abrir archivos PDF o texto…</button>
+        <button class="btn ghost" id="btnTemplate">⬇ Descargar plantilla .txt</button>
+        <button class="btn ghost" id="btnInstr">❓ Instrucciones de carga</button>
+        <input type="file" id="fileInput" accept=".txt,.md,.text,.pdf" multiple class="hidden">
+      </div>
+      <div id="rulesBox" class="hidden">
+        <ol class="rules" style="margin-top:12px">
+          <li><b>Formatos aceptados:</b> <b>.pdf</b> y <b>.txt</b>. Puedes elegir varios archivos a la vez.</li>
+          <li><b>Los PDF escaneados no se aceptan:</b> si el PDF es una foto de páginas (no puedes seleccionar su texto con el mouse), el sistema no puede leerlo y te avisará. Pide el documento en texto o conviértelo con OCR.</li>
+          <li><b>División automática:</b> un documento de más de 500 palabras (unas 2 páginas) se separa solo en partes de práctica numeradas (Parte 1/3, 2/3…).</li>
+          <li><b>Archivos .txt:</b> si traen <b>NIVEL: L1…L6</b> y <b>TITULO:</b> en las primeras líneas, se clasifican solos (usa «Descargar plantilla .txt» como modelo). Si no los traen, se cargan en el nivel elegido en pantalla.</li>
+          <li><b>Archivos .pdf:</b> el título será el nombre del archivo. Nómbralo con el cuento y su nivel, ej. <i>El zorro de Cerro de Pasco L3.pdf</i>.</li>
+          <li><b>Nada se copia a la máquina:</b> los textos no se guardan en el programa; solo se recuerda el <b>acceso</b> a los últimos 10 archivos para reabrirlos con un clic. Si mueves o borras el archivo, su acceso deja de funcionar.</li>
+        </ol>
+      </div>
+      <div id="recentWrap" class="hidden" style="margin-top:10px">
+        <div class="hint" style="margin-bottom:6px">🕘 Últimos archivos abiertos — toca uno para cargarlo de nuevo:</div>
+        <div class="toolbar" id="recentList"></div>
+      </div>
+      <div class="statusline" id="loadStatus"></div>
+    </div>
+    <div class="card">
+      <h2>Elige el nivel de la escalera</h2>
+      <div class="hint">Cada nivel tiene su meta de velocidad (palabras por minuto) según el plan SPPC.</div>
+      <div class="levels" id="levelRow"></div>
+      <div class="texts" id="textList"></div>
+    </div>
+  </section>
+
+  <!-- ============ VISTA: PRÁCTICA ============ -->
+  <section id="view-read" class="hidden">
+    <div class="card">
+      <h2 id="readTitle">—</h2>
+      <div class="hint" id="readMeta">—</div>
+
+      <div class="toolbar">
+        <button class="btn sage" id="btnListen">▶ Escuchar modelo</button>
+        <button class="btn ghost" id="btnListenStop" disabled>■ Detener</button>
+        <div class="speedrow">
+          Velocidad de voz
+          <input type="range" id="rate" min="0.6" max="1.3" step="0.1" value="0.9">
+          <span id="rateVal">0.9×</span>
+        </div>
+      </div>
+      <div class="toolbar" style="margin-top:-6px">
+        <div class="seg">
+          <button class="segb" id="lm_corrido">Corrido</button>
+          <button class="segb on" id="lm_palabra">Palabra por palabra</button>
+          <button class="segb" id="lm_silabas">Por sílabas</button>
+        </div>
+        <div class="speedrow" id="pauseRow">
+          Pausa entre palabras
+          <input type="range" id="pause" min="200" max="1500" step="100" value="600">
+          <span id="pauseVal">0.6 s</span>
+        </div>
+        <select class="vselect" id="voiceSel" title="Elige la voz de lectura"></select>
+      </div>
+      <div class="toolbar" style="margin-top:-6px">
+        <div class="seg">
+          <button class="segb" id="vp_aventura">⚔ Aventura · voz grave ♂</button>
+          <button class="segb" id="vp_novela">📖 Novela juvenil · ♀</button>
+          <button class="segb" id="vp_infantil">🧒 Cuento infantil · tono niño</button>
+        </div>
+        <div class="speedrow">
+          Tono (grave ↔ agudo)
+          <input type="range" id="pitch" min="0.5" max="1.8" step="0.05" value="1">
+          <span id="pitchVal">1.00</span>
+        </div>
+      </div>
+      <div class="statusline" style="margin-bottom:10px">🎭 <b>Paquetes de voz:</b> descarga voces naturales en Windows 11 (Configuración → Accesibilidad → Narrador → «Agregar voces naturales»: hay voces masculinas y femeninas en Español Perú, México y España), reinicia el navegador y elígela en el selector. Combina la voz con el <b>tono</b>: agudo = niño, grave = narrador de aventuras.</div>
+
+      <div class="note" id="modeNote">
+        <b>Modo guiado en eco (recomendado):</b> al pulsar «Comenzar lectura», la voz modelo lee el texto
+        y resalta cada palabra como karaoke; el estudiante <b>repite en voz alta</b> siguiendo el ritmo —
+        vista, oído y voz a la vez, sin interrupciones. El tutor escucha y <b>toca las palabras que salgan mal</b>
+        sin detener la lectura. La progresión es subir la velocidad poco a poco.
+      </div>
+
+      <div class="toolbar">
+        <button class="btn coral big" id="btnStart">● Comenzar lectura</button>
+        <button class="btn big" id="btnStop" disabled>■ Terminar</button>
+        <button class="btn ghost" id="btnMode">Modo: guiado en eco 👂🗣</button>
+        <button class="btn ghost hidden" id="btnEndAt">📍 Marcar fin de lectura</button>
+      </div>
+
+      <div style="display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;margin-bottom:6px">
+        <div class="timer" id="timer">0:00</div>
+        <div class="statusline" id="status">Listo para empezar.</div>
+      </div>
+    </div>
+
+    <div class="passage" id="passage"></div>
+
+    <div class="card hidden" id="resultCard">
+      <h2>Resultado de la sesión</h2>
+      <div class="verdict good" id="verdict">—</div>
+      <div class="results">
+        <div class="metric"><div class="v" id="mWpm">0</div><div class="l">Palabras / min</div></div>
+        <div class="metric"><div class="v" id="mAcc">0%</div><div class="l">Precisión</div></div>
+        <div class="metric"><div class="v" id="mErr">0</div><div class="l">Errores</div></div>
+        <div class="metric"><div class="v" id="mGoal">—</div><div class="l">Meta del nivel</div></div>
+      </div>
+      <div class="toolbar">
+        <button class="btn sage" id="btnSave">💾 Guardar en progreso</button>
+        <button class="btn ghost" id="btnRetry">↻ Repetir texto</button>
+        <button class="btn ghost" id="btnBack">← Elegir otro texto</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ VISTA: PROGRESO ============ -->
+  <section id="view-hist" class="hidden">
+    <div class="card">
+      <h2>Escalera de progreso</h2>
+      <div class="hint">Cada sesión guardada queda registrada en esta máquina. Expórtala a CSV para consolidarla en la planilla de la academia.</div>
+      <div class="toolbar">
+        <button class="btn sage" id="btnCsv">⬇ Exportar CSV</button>
+        <button class="btn coral" id="btnClear">🗑 Borrar historial</button>
+      </div>
+      <div id="histWrap"><p class="hint" id="histEmpty">Aún no hay sesiones guardadas. Completa una práctica y pulsa «Guardar en progreso».</p></div>
+      <canvas class="chart hidden" id="chart" width="880" height="190"></canvas>
+    </div>
+  </section>
+
+  <footer>SPPC · Módulo de lectura — prototipo local v1.6 · Los datos se guardan solo en este dispositivo.</footer>
+</div>
+<script>
+/* ================================================================
+   SPPC · Entrenador de Lectura — prototipo local
+   Datos: textos graduados por nivel (metas del plan SPPC)
+   ================================================================ */
+const LEVELS = [
+  { id:'L1', label:'L1', ages:'7–8 años',  goal:20,  goalTxt:'20 ppm',
+    desc:'Sílabas y oraciones simples' },
+  { id:'L2', label:'L2', ages:'9–10 años', goal:100, goalTxt:'100 ppm',
+    desc:'Oraciones y párrafos' },
+  { id:'L3', label:'L3', ages:'11–12 años',goal:130, goalTxt:'130 ppm',
+    desc:'Textos completos' },
+  { id:'L4', label:'L4', ages:'13–14 años',goal:160, goalTxt:'160 ppm',
+    desc:'Lectura de libros' },
+  { id:'L5', label:'L5', ages:'15–16 años',goal:185, goalTxt:'185 ppm',
+    desc:'Ensayo y prensa' },
+  { id:'L6', label:'L6', ages:'16–17 años',goal:200, goalTxt:'200+ ppm',
+    desc:'Síntesis crítica' },
+];
+
+const TEXTS = {
+  L1: [
+    { title:'El gato y el sol', body:'El gato toma el sol en el patio. La luna sale de noche. Mi mamá me da una sopa rica. El perro ladra al gato y el gato salta al techo. Yo leo con mi papá cada día. La casa es linda y mi mesa es de pino.' },
+    { title:'Mi familia', body:'Mi papá sale a la calle. Mi mamá pone la mesa. Mi hermano lee un libro. Yo tomo mi leche en la mesa. El sol sale cada mañana y el gallo canta con ganas. Me gusta ir a jugar al parque con mi perro.' },
+  ],
+  L2: [
+    { title:'El mercado del sábado', body:'Los sábados voy al mercado con mi abuela. Ella compra papas, tomates y frutas dulces. El señor del puesto nos regala una mandarina. Yo ayudo a llevar las bolsas. De vuelta a casa, mi abuela me cuenta cuentos de cuando era niña. La sopa que cocina con esas verduras es la más rica del mundo.' },
+    { title:'La lluvia en el techo', body:'Anoche llovió con fuerza y la lluvia sonaba en el techo como tambores pequeños. Mi hermana tenía un poco de miedo, pero yo le leí un cuento de dragones buenos. Poco a poco se quedó dormida. Esta mañana el cielo está limpio y azul, y en el jardín hay charcos donde saltan los gorriones.' },
+  ],
+  L3: [
+    { title:'El río que canta', body:'Cerca de mi pueblo corre un río que baja de la montaña. En verano su agua es fría y clara, y los peces plateados saltan entre las piedras. Mi tío dice que el río canta distinto en cada estación: fuerte y alegre cuando crece con las lluvias, suave y lento en los meses de sol. Cuidar el río es cuidar la vida de todos, porque sus aguas riegan los campos de maíz y dan de beber a los animales del valle.' },
+    { title:'Una carta para el futuro', body:'La profesora Rosa nos pidió escribir una carta para nosotros mismos dentro de diez años. Yo escribí que quiero ser ingeniera y construir puentes que unan los pueblos de la sierra. También escribí que espero seguir leyendo un libro cada mes, porque los libros me han enseñado más lugares de los que podría visitar. Guardamos las cartas en una caja de madera que se abrirá cuando terminemos el colegio.' },
+  ],
+  L4: [
+    { title:'La biblioteca de don Esteban', body:'Don Esteban convirtió la sala de su casa en la única biblioteca del distrito. Empezó con doce libros viejos que compró en una feria, y hoy tiene más de mil, ordenados en estantes que él mismo carpinteó. Los niños llegan después del colegio, dejan sus mochilas en la entrada y leen sentados en cojines de colores. Don Esteban no cobra nada; solo pide dos cosas: cuidar los libros y contarle, al devolverlos, qué aprendieron. Dice que un pueblo que lee nunca está solo, porque cada libro es una conversación con alguien que tuvo algo valioso que decir.' },
+    { title:'Sembrar en altura', body:'En las comunidades altoandinas, sembrar es un arte de paciencia y conocimiento. Los agricultores leen las señales de la naturaleza: la floración de ciertas plantas anuncia las heladas, y el comportamiento de las aves anticipa las lluvias. Con esa sabiduría, heredada de generaciones, deciden cuándo plantar la papa, la quinua y el maíz. Hoy, algunos jóvenes combinan ese conocimiento con pronósticos del clima que consultan en sus teléfonos. El resultado es notable: cosechas más seguras y comunidades que miran el futuro sin renunciar a su pasado.' },
+  ],
+  L5: [
+    { title:'El valor de preguntar', body:'La ciencia no avanza por las respuestas, sino por las preguntas. Cada gran descubrimiento comenzó con alguien que se negó a aceptar que las cosas eran así porque sí. Preguntarse por qué cae una manzana, por qué enferma un cuerpo o por qué brillan las estrellas ha transformado la historia humana. Sin embargo, en muchas aulas preguntar todavía se confunde con interrumpir, y el silencio se premia más que la curiosidad. Un sistema educativo que quiere formar pensadores debe hacer exactamente lo contrario: celebrar la pregunta incómoda, acompañar la búsqueda y enseñar a dudar con método. Porque quien aprende a preguntar bien, aprende a pensar; y quien aprende a pensar, ya no depende de que otros piensen por él.' },
+    { title:'Leer en la era de las pantallas', body:'Leer en una pantalla no es lo mismo que leer en papel, y la diferencia no está en el soporte sino en los hábitos que cada uno promueve. La pantalla invita al escaneo: saltar de un titular a otro, picar notificaciones, abandonar los párrafos largos. El libro exige lo opuesto: atención sostenida, seguimiento de una idea a lo largo de cien páginas, paciencia para el desarrollo de un argumento. Ninguno de los dos formatos desaparecerá, pero la escuela debe proteger la lectura profunda como se protege una reserva natural. Quien solo escanea pierde la capacidad de comprender textos complejos, y con ella, la posibilidad de comprender problemas complejos. La velocidad de lectura importa, pero solo cuando va acompañada de la comprensión.' },
+  ],
+  L6: [
+    { title:'La energía que viene', body:'La transición energética es probablemente el mayor desafío técnico y ético de este siglo. Reemplazar los combustibles fósiles no consiste únicamente en instalar paneles solares o turbinas de viento: implica rediseñar redes eléctricas, repensar el transporte, transformar la industria y, sobre todo, decidir quién paga los costos del cambio. Los países que más contaminaron históricamente poseen también los mayores recursos para financiar la transición, mientras que los que menos contribuyeron al problema enfrentan sus peores consecuencias. Esta asimetría convierte un desafío de ingeniería en una cuestión de justicia. Las nuevas generaciones heredarán tanto la infraestructura como las deudas de estas decisiones. Por eso la educación científica ya no puede ser un lujo de especialistas: comprender la energía, cómo se genera, cómo se almacena, qué costos implica cada fuente, es hoy una competencia ciudadana tan básica como la lectura o la aritmética. El futuro se decidirá en tratados y laboratorios, pero también en millones de aulas donde se forma la capacidad de evaluar evidencia y exigir decisiones informadas.' },
+    { title:'Pensar con números', body:'Vivimos inundados de datos y, paradójicamente, cada vez es más fácil mentir con ellos. Un promedio puede ocultar desigualdades brutales; un porcentaje puede sonar enorme sin contexto; una gráfica puede manipularse cortando el eje vertical. La alfabetización estadística es, en ese sentido, una herramienta de defensa personal. No se trata de que todos sean matemáticos, sino de que cualquier ciudadano pueda hacerse tres preguntas ante un número: de dónde viene, con qué se compara y qué intereses hay detrás. Estas preguntas, simples pero disciplinadas, desactivan la mayoría de las manipulaciones informativas. Formar lectores competentes de números es tan urgente como formar lectores de textos, porque la democracia moderna se debate cada vez más en el lenguaje de los datos. Un ciudadano que no puede evaluar una estadística queda expuesto a quienes sí saben usarla, y la libertad sin comprensión es una libertad frágil.' },
+  ],
+};
+
+/* ===================== estado ===================== */
+const $ = s => document.querySelector(s);
+const state = {
+  level: LEVELS[0],
+  textIdx: 0,
+  words: [],          // [{raw, norm}]
+  practiceMode: 'guiado', // 'guiado' (eco con voz modelo) | 'libre' (medición sin modelo)
+  mode: 'auto',       // dentro de 'libre': 'auto' | 'manual'
+  running: false,
+  curWordIdx: -1,     // última palabra leída por la voz modelo (modo guiado)
+  t0: 0, timerInt: null,
+  matched: 0, lastMatched: -1,
+  manualErr: new Set(), endAt: -1, endMarking:false,
+  recog: null, recogActive: false,
+};
+let listenFallback=null, utter=null;
+
+const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-zñ0-9]/g,'');
+
+/* ===================== navegación ===================== */
+const views = { home:'#view-home', read:'#view-read', hist:'#view-hist' };
+document.querySelectorAll('.tab').forEach(b=>{
+  b.addEventListener('click',()=>{
+    stopListening(); stopPractice(true);
+    document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===b));
+    Object.entries(views).forEach(([k,sel])=>$(sel).classList.toggle('hidden',k!==b.dataset.view));
+    if(b.dataset.view==='hist') renderHistory();
+  });
+});
+
+/* ===================== vista textos ===================== */
+function renderLevels(){
+  const row = $('#levelRow'); row.innerHTML='';
+  LEVELS.forEach(l=>{
+    const b=document.createElement('button');
+    b.className='lvl'+(l.id===state.level.id?' on':'');
+    b.innerHTML=`${l.label} · ${l.goalTxt}<small>${l.ages} — ${l.desc}</small>`;
+    b.onclick=()=>{state.level=l;renderLevels();};
+    row.appendChild(b);
+  });
+  const list=$('#textList'); list.innerHTML='';
+  TEXTS[state.level.id].forEach((t,i)=>{
+    const el=document.createElement('button');
+    el.className='textitem';
+    el.innerHTML=`<div class="n">${i+1}</div><div><b>${t.title}</b><span>${t.body.split(/\s+/).length} palabras · ${state.level.ages}</span></div>`;
+    el.onclick=()=>openText(i);
+    list.appendChild(el);
+  });
+}
+
+/* ===================== archivos externos (.txt) ===================== */
+function parseExtFile(txt, filename, defaultLevel){
+  const raw=txt.replace(/^﻿/,''); // quitar BOM
+  const lines=raw.split(/\r?\n/);
+  let level=defaultLevel;
+  let title=filename.replace(/\.[^.]+$/,'').replace(/[-_]+/g,' ').trim();
+  let bodyStart=0;
+  for(let i=0;i<Math.min(6,lines.length);i++){
+    const mN=lines[i].match(/^\s*NIVEL\s*:\s*(L[1-6])\s*$/i);
+    const mT=lines[i].match(/^\s*T[IÍ]TULO\s*:\s*(.+?)\s*$/i);
+    if(mN){ level=mN[1].toUpperCase(); bodyStart=Math.max(bodyStart,i+1); }
+    else if(mT){ title=mT[1]; bodyStart=Math.max(bodyStart,i+1); }
+    else if(lines[i].trim()==='' && bodyStart>0){ bodyStart=i+1; break; }
+  }
+  const body=lines.slice(bodyStart).join(' ').replace(/\s+/g,' ').trim();
+  if(!body) return [];
+  return splitLongText(body,title,level);
+}
+
+/* Divide textos largos en partes de práctica (~250 palabras, por oraciones) */
+function splitLongText(body,title,level){
+  const words=body.split(/\s+/).filter(Boolean);
+  if(words.length<=500) return [{level,title,body,ext:true}];
+  const sentences=body.match(/[^.!?]+[.!?]+["')\]]*\s*|[^.!?]+$/g)||[body];
+  const parts=[]; let cur='', curN=0;
+  for(const s of sentences){
+    const n=s.trim().split(/\s+/).filter(Boolean).length;
+    if(curN+n>250 && cur){ parts.push(cur.trim()); cur=''; curN=0; }
+    cur+=s; curN+=n;
+  }
+  if(cur.trim()) parts.push(cur.trim());
+  return parts.map((b,i)=>({level, title:`${title} — Parte ${i+1}/${parts.length}`, body:b, ext:true}));
+}
+
+/* ===================== extractor PDF (básico, sin librerías) =====================
+   Lee texto de PDFs comunes (Word/Acrobat): flujos /FlateDecode descomprimidos
+   con DecompressionStream y operadores de texto Tj/TJ/Td/T*. Los PDF escaneados
+   (solo imágenes) no tienen texto extraíble y se reportan. */
+async function pdfInflate(u8){
+  const ds=new DecompressionStream('deflate');
+  const st=new Blob([u8]).stream().pipeThrough(ds);
+  return new Uint8Array(await new Response(st).arrayBuffer());
+}
+function pdfAscii85(u8){
+  const out=[]; let tuple=0, count=0;
+  for(const b of u8){
+    if(b===0x7E) break;                       // ~> fin de datos
+    if(b<=32) continue;                       // espacios
+    if(b===0x7A && count===0){ out.push(0,0,0,0); continue; } // 'z' = 4 ceros
+    tuple=tuple*85+(b-33); count++;
+    if(count===5){
+      out.push((tuple>>>24)&255,(tuple>>>16)&255,(tuple>>>8)&255,tuple&255);
+      tuple=0; count=0;
+    }
+  }
+  if(count>0){
+    for(let i=count;i<5;i++) tuple=tuple*85+84;
+    const bytes=[(tuple>>>24)&255,(tuple>>>16)&255,(tuple>>>8)&255,tuple&255];
+    for(let i=0;i<count-1;i++) out.push(bytes[i]);
+  }
+  return Uint8Array.from(out);
+}
+function pdfUnescape(s){
+  return s.replace(/\\([nrtbf\\()])/g,(m,c)=>({n:'\n',r:'\r',t:'\t',b:'\b',f:'\f','\\':'\\','(':'(',')':')'}[c]))
+          .replace(/\\([0-7]{1,3})/g,(m,o)=>String.fromCharCode(parseInt(o,8)));
+}
+function pdfDecodeStr(s){
+  s=pdfUnescape(s);
+  // Muchos PDFs de Windows usan WinAnsi/Latin-1: bytes 0x80-0x9F con tildes comunes
+  return s.replace(/[\u0080-\u009F]/g,c=>String.fromCharCode(c.charCodeAt(0)));
+}
+/* UTF-16BE hex -> texto (valores del mapa ToUnicode) */
+function pdfUtf16be(hex){
+  let s='';
+  for(let i=0;i+4<=hex.length;i+=4) s+=String.fromCharCode(parseInt(hex.slice(i,i+4),16));
+  return s;
+}
+/* Parsea un CMap ToUnicode (beginbfchar / beginbfrange) */
+function pdfParseCMap(src){
+  const map=new Map();
+  for(const bm of src.matchAll(/beginbfchar([\s\S]*?)endbfchar/g))
+    for(const lm of bm[1].matchAll(/<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>/g))
+      map.set(lm[1].toUpperCase(), pdfUtf16be(lm[2]));
+  for(const bm of src.matchAll(/beginbfrange([\s\S]*?)endbfrange/g))
+    for(const lm of bm[1].matchAll(/<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>\s*(?:<([0-9A-Fa-f]+)>|\[([^\]]*)\])/g)){
+      const lo=parseInt(lm[1],16), hi=parseInt(lm[2],16), keyLen=lm[1].length;
+      if(lm[3]){
+        const dhex=lm[3], base=parseInt(dhex.slice(-4),16);
+        for(let c=lo;c<=hi;c++){
+          const last=(base+(c-lo)).toString(16).toUpperCase().padStart(4,'0');
+          map.set(c.toString(16).toUpperCase().padStart(keyLen,'0'), pdfUtf16be(dhex.slice(0,-4)+last));
+        }
+      }else if(lm[4]){
+        const arr=[...lm[4].matchAll(/<([0-9A-Fa-f]+)>/g)].map(x=>x[1]);
+        arr.forEach((d,i)=>map.set((lo+i).toString(16).toUpperCase().padStart(keyLen,'0'), pdfUtf16be(d)));
+      }
+    }
+  return map;
+}
+/* Cadena hex <…> -> texto, usando el CMap de la fuente activa (fuentes CID de Word/LibreOffice/Docs) */
+function pdfDecodeHex(hex,cmap,codeLen){
+  hex=hex.toUpperCase().replace(/[^0-9A-F]/g,'');
+  let s='', i=0;
+  while(i+2<=hex.length){
+    let k=hex.slice(i,i+codeLen), v=cmap&&cmap.get(k);
+    if(v===undefined && codeLen!==2){ k=hex.slice(i,i+2); v=cmap&&cmap.get(k); }
+    if(v!==undefined){ s+=v; i+=k.length; }
+    else{ s+=String.fromCharCode(parseInt(hex.slice(i,i+2),16)); i+=2; }
+  }
+  return s;
+}
+function pdfTextFromContent(src,fonts){
+  fonts=fonts||new Map();
+  let out=''; let prevOpNewline=false; let curCmap=null, curCodeLen=2;
+  const re=/\/F[\w.]+\s+[\d.]+\s+Tf|<[0-9A-Fa-f\s]+>\s*Tj|\((?:\\.|[^\\()])*\)\s*Tj|\[(?:[^\[\]]|\\.)*\]\s*TJ|T[dD*](?=[\s\[])|ET(?=[\s(])/g;
+  let m;
+  while((m=re.exec(src))){
+    const tok=m[0];
+    if(/Tf$/.test(tok)){                       // cambio de fuente: actualiza el CMap activo
+      const fn=(/\/(F[\w.]+)/.exec(tok)||[])[1];
+      curCmap=fonts.get(fn)||null;
+      if(curCmap) curCodeLen=Math.max(2,...[...curCmap.keys()].map(k=>k.length));
+      continue;
+    }
+    if(/^<[0-9A-Fa-f\s]+>\s*Tj$/.test(tok)){
+      const hex=tok.slice(1,tok.search(/>\s*Tj$/));
+      if(prevOpNewline && out && !/\s$/.test(out)) out+=' ';
+      out+=pdfDecodeHex(hex,curCmap,curCodeLen); prevOpNewline=false;
+    }else if(/\)\s*Tj$/.test(tok)){
+      const str=tok.slice(1,tok.search(/\)\s*Tj$/));
+      if(prevOpNewline && out && !/\s$/.test(out)) out+=' ';
+      out+=pdfDecodeStr(str); prevOpNewline=false;
+    }else if(/\]\s*TJ$/.test(tok)){
+      const inner=tok.slice(1,tok.search(/\]\s*TJ$/));
+      const parts=inner.match(/<[0-9A-Fa-f\s]+>|\((?:\\.|[^\\()])*\)|-?\d+(?:\.\d+)?/g)||[];
+      let line='';
+      for(const p of parts){
+        if(p.startsWith('(')) line+=pdfDecodeStr(p.slice(1,-1));
+        else if(p.startsWith('<')) line+=pdfDecodeHex(p.slice(1,-1),curCmap,curCodeLen);
+        else if(parseFloat(p)<-120) line+=' ';  // espacio entre palabras (ajuste de kerning)
+      }
+      if(prevOpNewline && out && !/\s$/.test(out)) out+=' ';
+      out+=line; prevOpNewline=false;
+    }else{                                     // Td / TD / T* / ET: fin de línea
+      if(out && !/\s$/.test(out)) out+='\n'; prevOpNewline=true;
+    }
+  }
+  return out;
+}
+async function extractPdfText(buf){
+  const u8=new Uint8Array(buf);
+  const latin1=new TextDecoder('latin1');
+  const raw=latin1.decode(u8);
+  // 1) localiza objetos y decodifica todos sus flujos (ASCII85 y/o Flate)
+  const objs=[]; const objRe=/(\d+)\s+0\s+obj/g; let om;
+  while((om=objRe.exec(raw))) objs.push({num:+om[1], idx:om.index});
+  const streams=new Map();
+  for(let k=0;k<objs.length;k++){
+    const segEnd=k+1<objs.length?objs[k+1].idx:raw.length;
+    const seg=raw.slice(objs[k].idx,segEnd);
+    const smM=/stream\r?\n/.exec(seg);
+    if(!smM) continue;
+    const sStart=smM.index+smM[0].length;
+    const sEnd=seg.indexOf('endstream',sStart);
+    if(sEnd<0) continue;
+    try{
+      let data=u8.subarray(objs[k].idx+sStart,objs[k].idx+sEnd);
+      if(/ASCII85Decode/.test(seg.slice(0,smM.index))) data=pdfAscii85(data);
+      if(/FlateDecode/.test(seg.slice(0,smM.index))) data=await pdfInflate(data);
+      streams.set(objs[k].num,latin1.decode(data));
+    }catch(_){}
+  }
+  // 2) mapas ToUnicode de las fuentes
+  const cmaps=new Map();
+  for(const [num,src] of streams) if(/beginbf/.test(src)) cmaps.set(num,pdfParseCMap(src));
+  // 3) objeto de fuente -> CMap
+  const fontObjToCmap=new Map();
+  for(let k=0;k<objs.length;k++){
+    const seg=raw.slice(objs[k].idx,k+1<objs.length?objs[k+1].idx:raw.length);
+    const tu=/\/ToUnicode\s+(\d+)\s+0\s+R/.exec(seg);
+    if(tu&&cmaps.has(+tu[1])) fontObjToCmap.set(objs[k].num,cmaps.get(+tu[1]));
+  }
+  // 4) nombre de recurso (/F1…) -> CMap
+  const fonts=new Map();
+  for(const fm of raw.matchAll(/\/(F[\w.]+)\s+(\d+)\s+0\s+R/g))
+    if(fontObjToCmap.has(+fm[2])&&!fonts.has(fm[1])) fonts.set(fm[1],fontObjToCmap.get(+fm[2]));
+  // 5) extrae el texto de los flujos de contenido (en orden de objeto)
+  let text='';
+  for(const num of [...streams.keys()].sort((a,b)=>a-b)){
+    const src=streams.get(num);
+    if(/\bBT\b/.test(src)&&!/beginbf/.test(src)) text+=pdfTextFromContent(src,fonts)+'\n';
+  }
+  return text.replace(/[ \t]+/g,' ').replace(/\n{3,}/g,'\n\n').trim();
+}
+
+/* ===================== carga de archivos + accesos recientes =====================
+   v1.6 — Los navegadores no permiten guardar "rutas" de archivos, pero Chrome/Edge
+   sí permiten guardar un ACCESO AUTORIZADO al archivo (File System Access API +
+   IndexedDB). Eso da la reapertura con un clic que necesita la academia.
+   En otros navegadores se recuerdan solo los nombres (referencia visual). */
+function withTimeout(p,ms){
+  return Promise.race([p, new Promise((_,rej)=>setTimeout(()=>rej(new Error('almacenamiento no disponible')),ms))]);
+}
+function idbOpen(){
+  return new Promise((res,rej)=>{
+    const r=indexedDB.open('sppc-files',1);
+    r.onupgradeneeded=()=>r.result.createObjectStore('handles',{keyPath:'name'});
+    r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);
+  });
+}
+async function idbPut(rec){ const db=await withTimeout(idbOpen(),2000); return new Promise((res,rej)=>{ const tx=db.transaction('handles','readwrite'); tx.objectStore('handles').put(rec); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); }
+async function idbAll(){ const db=await withTimeout(idbOpen(),2000); return new Promise((res,rej)=>{ const rq=db.transaction('handles').objectStore('handles').getAll(); rq.onsuccess=()=>res(rq.result||[]); rq.onerror=()=>rej(rq.error); }); }
+async function idbDel(name){ const db=await withTimeout(idbOpen(),2000); return new Promise((res,rej)=>{ const tx=db.transaction('handles','readwrite'); tx.objectStore('handles').delete(name); tx.oncomplete=res; tx.onerror=()=>rej(tx.error); }); }
+
+async function saveRecentHandle(handle){
+  try{
+    await withTimeout(idbPut({name:handle.name, handle, last:Date.now()}),2500);
+    const recs=(await withTimeout(idbAll(),2500)).sort((a,b)=>b.last-a.last);
+    for(const r of recs.slice(10)) await idbDel(r.name);   // máximo 10
+  }catch(_){}
+}
+function rememberRecentNames(names){
+  try{
+    const cur=JSON.parse(localStorage.getItem('sppc_recent_names')||'[]');
+    const merged=[...names, ...cur].filter((v,i,a)=>a.indexOf(v)===i).slice(0,10);
+    localStorage.setItem('sppc_recent_names',JSON.stringify(merged));
+  }catch(_){}
+}
+
+async function processOneFile(f){
+  if(/\.pdf$/i.test(f.name)){
+    const text=await extractPdfText(await f.arrayBuffer());
+    const nWords=text.split(/\s+/).filter(Boolean).length;
+    if(nWords<15) return {added:0, levels:[], failed:`${f.name} (sin texto legible — ¿escaneado?)`};
+    const title=f.name.replace(/\.pdf$/i,'').replace(/[_-]+/g,' ').trim();
+    const parts=splitLongText(text.replace(/\s+/g,' '),title,state.level.id);
+    parts.forEach(t=>TEXTS[t.level].push({title:t.title, body:t.body, ext:true}));
+    return {added:parts.length, levels:parts.map(t=>t.level), failed:null};
+  }
+  const txt=await f.text();
+  const parts=parseExtFile(txt, f.name, state.level.id);
+  parts.forEach(t=>TEXTS[t.level].push({title:t.title, body:t.body, ext:true}));
+  return parts.length
+    ? {added:parts.length, levels:parts.map(t=>t.level), failed:null}
+    : {added:0, levels:[], failed:f.name};
+}
+async function loadFiles(files){
+  let added=0; const levels=new Set(); const failed=[];
+  $('#loadStatus').textContent='Leyendo archivos…';
+  for(const f of files){
+    try{
+      const r=await processOneFile(f);
+      added+=r.added; r.levels.forEach(l=>levels.add(l));
+      if(r.failed) failed.push(r.failed);
+    }catch(_){ failed.push(f.name); }
+  }
+  $('#loadStatus').textContent = (added
+    ? `✔ ${added} texto(s)/parte(s) agregados (${[...levels].join(', ')}).`
+    : 'No se pudo leer ningún texto de los archivos seleccionados.')
+    + (failed.length?` ⚠ No se pudo extraer: ${failed.join(', ')}.`:'');
+  renderLevels();
+}
+
+async function renderRecentFiles(){
+  const wrap=$('#recentWrap'), list=$('#recentList');
+  let recs=[];
+  try{ recs=(await withTimeout(idbAll(),2500)).sort((a,b)=>b.last-a.last); }catch(_){}
+  let names=[];
+  try{ names=JSON.parse(localStorage.getItem('sppc_recent_names')||'[]'); }catch(_){}
+  if(!recs.length && !names.length){ wrap.classList.add('hidden'); return; }
+  wrap.classList.remove('hidden');
+  list.innerHTML='';
+  for(const r of recs.slice(0,10)){
+    const b=document.createElement('button');
+    b.className='btn ghost recentfile';
+    b.textContent=`${/\.pdf$/i.test(r.name)?'📕':'📝'} ${r.name}`;
+    b.title='Volver a cargar este archivo';
+    b.addEventListener('click',async ()=>{
+      try{
+        let p=await r.handle.queryPermission({mode:'read'});
+        if(p!=='granted') p=await r.handle.requestPermission({mode:'read'});
+        if(p!=='granted'){ $('#loadStatus').textContent='⚠ Permiso denegado para reabrir el archivo.'; return; }
+        const f=await r.handle.getFile();
+        await idbPut({name:r.name, handle:r.handle, last:Date.now()});
+        await loadFiles([f]);
+        renderRecentFiles();
+      }catch(_){
+        $('#loadStatus').textContent=`⚠ No se encontró «${r.name}» (¿lo moviste o borraste?). Se quita de la lista.`;
+        try{ await idbDel(r.name); }catch(_){}
+        renderRecentFiles();
+      }
+    });
+    list.appendChild(b);
+  }
+  // nombres sin acceso directo (navegador sin File System Access)
+  for(const n of names.filter(n=>!recs.some(r=>r.name===n)).slice(0,Math.max(0,10-recs.length))){
+    const s=document.createElement('span');
+    s.className='recentdead';
+    s.textContent=`📝 ${n} (reábrelo con «Abrir archivos»)`;
+    list.appendChild(s);
+  }
+}
+
+$('#btnInstr').addEventListener('click',()=>$('#rulesBox').classList.toggle('hidden'));
+$('#btnLoadFile').addEventListener('click',async ()=>{
+  if(window.showOpenFilePicker){
+    try{
+      const handles=await showOpenFilePicker({
+        multiple:true,
+        types:[{description:'Cuentos SPPC', accept:{'application/pdf':['.pdf'],'text/plain':['.txt','.md','.text']}}],
+      });
+      const files=[];
+      for(const h of handles){ files.push(await h.getFile()); await saveRecentHandle(h); }
+      rememberRecentNames(files.map(f=>f.name));
+      await loadFiles(files);
+      renderRecentFiles();
+    }catch(_){ /* selección cancelada */ }
+  }else{
+    $('#fileInput').click();
+  }
+});
+$('#fileInput').addEventListener('change',async e=>{
+  const files=[...e.target.files]; if(!files.length) return;
+  rememberRecentNames(files.map(f=>f.name));
+  await loadFiles(files);
+  renderRecentFiles();
+  e.target.value='';
+});
+$('#btnTemplate').addEventListener('click',()=>{
+  const demo='NIVEL: L2\nTITULO: El mercado del sábado\n\nLos sábados voy al mercado con mi abuela. Ella compra papas, tomates y frutas dulces. El señor del puesto nos regala una mandarina.\n\n(…escribe o pega aquí el resto del cuento…)\n\nREGLAS DEL FORMATO:\n- Línea 1: NIVEL: L1 (puede ser L1 a L6; si la omites, se usa el nivel elegido en pantalla)\n- Línea 2: TITULO: nombre del cuento (si la omites, se usa el nombre del archivo)\n- Línea en blanco y luego el texto completo.\n- Si el texto pasa de 500 palabras, el sistema lo divide en partes de práctica automáticamente.';
+  const blob=new Blob([demo],{type:'text/plain;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download='plantilla_cuento_sppc.txt'; a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+/* ===================== preparar lectura ===================== */
+function openText(i){
+  state.textIdx=i;
+  const t=TEXTS[state.level.id][i];
+  state.words=t.body.split(/\s+/).map(w=>({raw:w,norm:norm(w)}));
+  $('#readTitle').textContent=`${state.level.label} — ${t.title}`;
+  $('#readMeta').textContent=`${state.words.length} palabras · Meta: ${state.level.goalTxt} · ${state.level.ages}`;
+  const pas=$('#passage');
+  pas.classList.toggle('size-s', state.words.length>140);
+  pas.innerHTML=state.words.map((w,j)=>`<span class="w" data-i="${j}">${w.raw}</span>`).join(' ');
+  $('#resultCard').classList.add('hidden');
+  $('#tabRead').disabled=false;
+  document.querySelector('[data-view="read"]').click();
+  resetPractice();
+}
+
+/* ===================== modo escuchar (TTS + highlight) ===================== */
+let listenMode='palabra';   // 'corrido' | 'palabra' | 'silabas'
+let seqCancel=false;
+let voicesCache=[];
+
+function stopListening(){
+  seqCancel=true;
+  if(window.speechSynthesis){ speechSynthesis.cancel(); }
+  if(listenFallback){ clearInterval(listenFallback); listenFallback=null; }
+  document.querySelectorAll('#passage .w.cur').forEach(e=>e.classList.remove('cur'));
+  $('#btnListen').disabled=false; $('#btnListenStop').disabled=true;
+}
+function highlightWord(i){
+  document.querySelectorAll('#passage .w.cur').forEach(e=>e.classList.remove('cur'));
+  const el=document.querySelector(`#passage .w[data-i="${i}"]`);
+  if(el){ el.classList.add('cur'); el.scrollIntoView({block:'nearest',behavior:'smooth'}); }
+}
+
+/* ---------- voces ---------- */
+function loadVoices(){
+  if(!('speechSynthesis' in window)) return;
+  voicesCache=speechSynthesis.getVoices().filter(v=>v.lang && v.lang.toLowerCase().startsWith('es'));
+  const sel=$('#voiceSel'); if(!sel) return;
+  const saved=localStorage.getItem('sppc_voice')||'';
+  const score=v=>{
+    let s=0; const n=(v.name||'').toLowerCase();
+    if(v.lang==='es-PE') s+=3;
+    if(n.includes('natural')) s+=2;
+    if(n.includes('online')) s+=1;
+    return -s;
+  };
+  const list=[...voicesCache].sort((a,b)=>score(a)-score(b));
+  sel.innerHTML='';
+  list.forEach(v=>{
+    const o=document.createElement('option');
+    o.value=v.name;
+    o.textContent=v.name.replace(/^Microsoft /,'').replace(' Online (Natural)',' ★natural').replace(/ - Spanish.*$/,'');
+    sel.appendChild(o);
+  });
+  if(!list.length){
+    const o=document.createElement('option'); o.value=''; o.textContent='Voz del sistema';
+    sel.appendChild(o);
+  }
+  if(saved && list.some(v=>v.name===saved)) sel.value=saved;
+}
+function pickVoice(){
+  const sel=$('#voiceSel');
+  const name=sel?sel.value:'';
+  return voicesCache.find(v=>v.name===name) || voicesCache[0] || null;
+}
+
+/* ---------- controles ---------- */
+let voicePitch=1.0;
+$('#rate').addEventListener('input',e=>{$('#rateVal').textContent=e.target.value+'×';});
+$('#pause').addEventListener('input',e=>{$('#pauseVal').textContent=(e.target.value/1000).toFixed(1)+' s';});
+$('#pitch').addEventListener('input',e=>{voicePitch=parseFloat(e.target.value);$('#pitchVal').textContent=voicePitch.toFixed(2);});
+$('#voiceSel').addEventListener('change',e=>localStorage.setItem('sppc_voice',e.target.value));
+$('#btnListenStop').addEventListener('click',stopListening);
+
+/* ---------- perfiles de voz por género literario ---------- */
+function applyPreset(pr){
+  voicePitch=pr.pitch;
+  $('#pitch').value=pr.pitch; $('#pitchVal').textContent=pr.pitch.toFixed(2);
+  $('#rate').value=pr.rate;   $('#rateVal').textContent=pr.rate+'×';
+  $('#pause').value=pr.pause; $('#pauseVal').textContent=(pr.pause/1000).toFixed(1)+' s';
+  ['vp_aventura','vp_novela','vp_infantil'].forEach(id=>$('#'+id).classList.toggle('on',id===pr.id));
+  $('#status').textContent='Perfil «'+pr.name+'» activado. Pulsa ▶ Escuchar modelo.';
+}
+$('#vp_aventura').addEventListener('click',()=>applyPreset({id:'vp_aventura',name:'Aventura · voz grave',pitch:0.75,rate:0.85,pause:700}));
+$('#vp_novela').addEventListener('click',()=>applyPreset({id:'vp_novela',name:'Novela juvenil',pitch:1.05,rate:1.0,pause:500}));
+$('#vp_infantil').addEventListener('click',()=>applyPreset({id:'vp_infantil',name:'Cuento infantil · tono niño',pitch:1.5,rate:0.8,pause:800}));
+function setListenMode(m){
+  listenMode=m;
+  ['corrido','palabra','silabas'].forEach(x=>$('#lm_'+x).classList.toggle('on',x===m));
+  $('#pauseRow').classList.toggle('hidden',m==='corrido');
+}
+$('#lm_corrido').addEventListener('click',()=>setListenMode('corrido'));
+$('#lm_palabra').addEventListener('click',()=>setListenMode('palabra'));
+$('#lm_silabas').addEventListener('click',()=>setListenMode('silabas'));
+
+/* ---------- silabeador básico de español ---------- */
+function syllabify(word){
+  const clean=word.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-zñü]/g,'');
+  if(clean.length<=3) return [clean||word.toLowerCase()];
+  const isV=c=>'aeiouü'.includes(c), isS=c=>'aeo'.includes(c);
+  // núcleos vocálicos (diptongos juntos, hiatos separados)
+  const nuc=[]; let i=0;
+  while(i<clean.length){
+    if(!isV(clean[i])){ i++; continue; }
+    let j=i;
+    while(j+1<clean.length && isV(clean[j+1])){
+      if(isS(clean[j]) && isS(clean[j+1])) break;   // hiato: dos vocales fuertes
+      j++;
+    }
+    nuc.push([i,j]); i=j+1;
+  }
+  if(nuc.length<=1) return [clean];
+  const ins=['pr','br','tr','dr','cr','gr','fr','pl','bl','cl','gl','fl','tl','rr','ll','ch'];
+  const syl=[]; let start=0;
+  for(let k=0;k<nuc.length-1;k++){
+    const end1=nuc[k][1], start2=nuc[k+1][0];
+    const between=clean.slice(end1+1,start2);
+    let cut;
+    if(between.length<=1) cut=end1+1;
+    else if(between.length===2) cut=ins.includes(between)? end1+1 : end1+2;
+    else if(between.length===3) cut=ins.includes(between.slice(1))? end1+2 : end1+3;
+    else cut=end1+2;
+    syl.push(clean.slice(start,cut)); start=cut;
+  }
+  syl.push(clean.slice(start));
+  return syl.filter(Boolean);
+}
+
+/* ---------- texto a hablar: corrige lecturas ambiguas ---------- */
+function speakText(w){
+  // la conjunción "y" aislada la TTS la nombra como letra ("i griega");
+  // se reemplaza por "i", que suena idéntico a la conjunción
+  if(/^y$/i.test(w.trim())) return 'i';
+  return w;
+}
+
+/* v1.4.2 — Escudo universal contra siglas y símbolos en sílabas aisladas.
+   Las voces TTS buscan cada fragmento en su diccionario de siglas/símbolos:
+   "na"→sodio (Na), "sa"→"ese-a" (SA), "ri"→"ere-i" (RI), "dia"→"de-i-a" (DIA),
+   "au"→oro (Au), "cia"→CIA… Imposible enumerarlas todas, así que en vez de una
+   lista se acentúa la VOCAL TÓNICA de toda sílaba hablada:
+   - La tilde NO cambia el sonido de una sílaba aislada: va en la vocal fuerte
+     (diá=/dja/, fué=/fwe/, cuá=/kwa/) o en la única vocal (ná, sá, rí) — en
+     ambos casos suena exactamente igual que sin tilde.
+   - Pero el texto ya no coincide con ninguna sigla/símbolo del diccionario,
+     así que la voz lo lee fonéticamente. Cobertura del 100%, presente y futura.
+   Reglas: tónica = primera vocal fuerte (a/e/o); si solo hay débiles (iu, ui),
+   la última. La "u" muda de que/qui/gue/gui no cuenta. Se omiten sílabas de
+   una letra ("a","o") y las que terminan en "y" (hay, rey, soy: se leen bien). */
+function fixSyllableSpeech(s){
+  const t=s.trim();
+  if(t.length<2 || /[áéíóú]/.test(t) || /y$/.test(t)) return t;
+  const masked=t.replace(/(?<=[qg])u(?=[ei])/g,'\u0001');      // u muda no es vocal
+  const vm=[...masked.matchAll(/[aeiou]/g)];
+  if(!vm.length) return t;                                      // números, siglas sin vocal
+  let tonic=-1;
+  for(const m of vm){ if('aeo'.includes(m[0])){ tonic=m.index; break; } }
+  if(tonic<0) tonic=vm[vm.length-1].index;                      // solo débiles: tónica la última
+  const acc={a:'á',e:'é',i:'í',o:'ó',u:'ú'};
+  return (masked.slice(0,tonic)+acc[masked[tonic]]+masked.slice(tonic+1)).replace(/\u0001/g,'u');
+}
+
+/* ---------- lectura secuencial (karaoke exacto) ---------- */
+function speakSeq(items, voice, rate, onDone){
+  seqCancel=false; let i=0;
+  function next(){
+    if(seqCancel) return;
+    if(i>=items.length){
+      if(onDone){ onDone(); }
+      else{ stopListening(); $('#status').textContent='Lectura modelo terminada.'; }
+      return;
+    }
+    const it=items[i];
+    state.curWordIdx=it.wordIndex;
+    highlightWord(it.wordIndex);
+    const u=new SpeechSynthesisUtterance(it.text);
+    u.lang='es-PE'; u.rate=rate; u.pitch=voicePitch;
+    if(voice) u.voice=voice;
+    u.onend=()=>{ i++; setTimeout(next, it.gapAfter); };
+    u.onerror=()=>{ i++; setTimeout(next, it.gapAfter); };
+    speechSynthesis.speak(u);
+  }
+  next();
+}
+
+/* Ítems hablados según el modo de escucha (palabra por palabra o por sílabas) */
+function buildSpeechItems(mode){
+  const pause=parseInt($('#pause').value,10);
+  const items=[];
+  state.words.forEach((w,wi)=>{
+    if(mode==='palabra'){
+      items.push({ text:speakText(w.raw), wordIndex:wi, gapAfter:pause });
+    }else{
+      const syl=syllabify(w.raw);
+      syl.forEach((s,si)=>{
+        items.push({ text:speakText(fixSyllableSpeech(s)), wordIndex:wi, gapAfter: si===syl.length-1 ? pause : Math.max(180, Math.round(pause*0.45)) });
+      });
+    }
+  });
+  return items;
+}
+
+$('#btnListen').addEventListener('click',()=>{
+  stopListening();
+  if(!('speechSynthesis' in window)){ $('#status').textContent='Este navegador no soporta lectura en voz alta.'; return; }
+  const text=TEXTS[state.level.id][state.textIdx].body;
+  const rate=parseFloat($('#rate').value);
+  const pause=parseInt($('#pause').value,10);
+  const voice=pickVoice();
+  speechSynthesis.cancel();
+
+  if(listenMode==='corrido'){
+    // lectura continua + karaoke por eventos de palabra (o respaldo por tiempo)
+    utter=new SpeechSynthesisUtterance(text);
+    utter.lang='es-PE'; utter.rate=rate; utter.pitch=voicePitch;
+    if(voice) utter.voice=voice;
+    const starts=[]; let pos=0;
+    state.words.forEach((w,j)=>{ const idx=text.indexOf(w.raw,pos); starts.push(idx<0?pos:idx); pos=(idx<0?pos:idx)+w.raw.length; });
+    let gotBoundary=false;
+    utter.onboundary=e=>{
+      if(typeof e.charIndex!=='number') return;
+      gotBoundary=true;
+      if(listenFallback){ clearInterval(listenFallback); listenFallback=null; }
+      let j=0; while(j+1<starts.length && starts[j+1]<=e.charIndex) j++;
+      highlightWord(j);
+    };
+    utter.onend=()=>{ stopListening(); $('#status').textContent='Lectura modelo terminada.'; };
+    setTimeout(()=>{
+      if(!gotBoundary && speechSynthesis.speaking){
+        let j=0;
+        const totalChars=text.length;
+        const cps=12*rate;
+        const intervalMs=Math.max(150,(totalChars/state.words.length)/cps*1000);
+        listenFallback=setInterval(()=>{
+          j++; if(j>=state.words.length){ stopListening(); return; }
+          highlightWord(j);
+        }, intervalMs);
+      }
+    },1500);
+    speechSynthesis.speak(utter);
+  }else{
+    // karaoke exacto: palabra por palabra o por sílabas, con pausas
+    speakSeq(buildSpeechItems(listenMode), voice, rate);
+  }
+  $('#btnListen').disabled=true; $('#btnListenStop').disabled=false;
+  $('#status').textContent='Escucha y sigue las palabras resaltadas…';
+});
+</script>
+<script>
+/* ===================== práctica: temporizador ===================== */
+function fmt(t){ const m=Math.floor(t/60), s=Math.floor(t%60); return m+':'+String(s).padStart(2,'0'); }
+function tick(){ $('#timer').textContent=fmt((Date.now()-state.t0)/1000); }
+
+function resetPractice(){
+  stopPractice(true);
+  state.matched=0; state.lastMatched=-1; state.manualErr=new Set(); state.endAt=-1; state.recogWords=[];
+  document.querySelectorAll('#passage .w').forEach(e=>e.classList.remove('ok','err','cur','end'));
+  $('#timer').textContent='0:00';
+  $('#status').textContent='Listo para empezar.';
+  $('#status').classList.remove('live');
+  $('#resultCard').classList.add('hidden');
+  $('#btnStart').disabled=false; $('#btnStop').disabled=true;
+}
+
+/* ---------- modo automático: Web Speech API ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+function startRecognition(){
+  if(!SR){ $('#status').textContent='Reconocimiento de voz no disponible aquí. Cambiando a modo libre con tutor.'; setPracticeMode('libre','manual'); return false; }
+  try{
+    state.recog=new SR();
+    state.recog.lang='es-PE'; state.recog.continuous=true; state.recog.interimResults=true;
+    state.recog.onresult=e=>{
+      for(let i=e.resultIndex;i<e.results.length;i++){
+        const words=norm(e.results[i][0].transcript).split(/\s+/).filter(Boolean);
+        words.forEach(w=>consumeWord(w));
+      }
+      updateLiveStatus();
+    };
+    state.recog.onerror=e=>{
+      if(e.error==='not-allowed'||e.error==='service-not-allowed'){
+        $('#status').textContent='Micrófono no permitido o sin conexión. Cambia a modo manual para medir sin internet.';
+      }
+    };
+    state.recog.onend=()=>{ if(state.recogActive && state.running && state.mode==='auto'){ try{state.recog.start();}catch(_){ } } };
+    state.recog.start();
+    return true;
+  }catch(_){ return false; }
+}
+/* Empareja la palabra reconocida con la siguiente palabra del texto (ventana de 3) */
+function consumeWord(w){
+  if(!w || state.lastMatched>=state.words.length-1) return;
+  for(let look=state.lastMatched+1; look<=Math.min(state.lastMatched+3, state.words.length-1); look++){
+    if(state.words[look].norm===w){
+      for(let k=state.lastMatched+1;k<look;k++){ mark(k,'err'); } // omisiones
+      mark(look,'ok');
+      state.matched++; state.lastMatched=look;
+      if(look===state.words.length-1) finishPractice();
+      return;
+    }
+  }
+}
+function mark(i,cls){
+  const el=document.querySelector(`#passage .w[data-i="${i}"]`);
+  if(el){ el.classList.remove('ok','err'); el.classList.add(cls); }
+  if(cls==='ok') el.scrollIntoView({block:'nearest'});
+}
+function updateLiveStatus(){
+  const sec=(Date.now()-state.t0)/1000;
+  if(sec>3 && state.matched>0){
+    const wpm=Math.round(state.matched/sec*60);
+    $('#status').textContent=`Escuchando… ${state.matched} palabras correctas · ~${wpm} ppm en vivo`;
+    $('#status').classList.add('live');
+  }
+}
+
+/* ---------- marcar errores: tutor toca palabras (guiado o libre-manual) ---------- */
+$('#passage').addEventListener('click',e=>{
+  const el=e.target.closest('.w'); if(!el) return;
+  // En modo guiado el tutor marca mientras la voz modelo lee (sin detenerla);
+  // en modo libre solo se marca con el submodo manual.
+  if(state.practiceMode==='guiado'){ if(!state.running) return; }
+  else if(state.mode!=='manual') return;
+  const i=+el.dataset.i;
+  if(state.endMarking){
+    state.endAt=i;
+    document.querySelectorAll('#passage .w.end').forEach(x=>x.classList.remove('end'));
+    el.classList.add('end');
+    state.endMarking=false; $('#btnEndAt').classList.remove('coral');
+    $('#status').textContent=`Fin de lectura marcado en la palabra ${i+1} de ${state.words.length}.`;
+    return;
+  }
+  if(state.manualErr.has(i)){ state.manualErr.delete(i); el.classList.remove('err'); }
+  else{ state.manualErr.add(i); el.classList.add('err'); }
+});
+$('#btnEndAt').addEventListener('click',()=>{
+  state.endMarking=!state.endMarking;
+  $('#btnEndAt').classList.toggle('coral',state.endMarking);
+  $('#status').textContent=state.endMarking?'Toca la ÚLTIMA palabra que leyó el estudiante.':'Listo.';
+});
+
+/* v1.5 — tres modos de práctica: guiado en eco (modelo + repetición + karaoke),
+   libre con micrófono y libre con tutor (diagnósticos puntuales) */
+function setPracticeMode(pm, sub){
+  state.practiceMode=pm;
+  if(sub) state.mode=sub;
+  const label = pm==='guiado'
+    ? 'Modo: guiado en eco 👂🗣'
+    : (state.mode==='auto' ? 'Modo: libre · micrófono 🎙️' : 'Modo: libre · tutor marca ✋');
+  $('#btnMode').textContent=label;
+  $('#btnEndAt').classList.toggle('hidden', !(pm==='libre' && state.mode==='manual'));
+  $('#passage').classList.toggle('marking', pm==='guiado' || (pm==='libre' && state.mode==='manual'));
+  $('#modeNote').innerHTML = pm==='guiado'
+    ? '<b>Modo guiado en eco (recomendado):</b> la voz modelo lee el texto y resalta cada palabra como karaoke; el estudiante <b>repite en voz alta</b> siguiendo el ritmo — vista, oído y voz a la vez, sin interrupciones. El tutor escucha y <b>toca las palabras que salgan mal</b> sin detener la lectura. Al terminar verás las palabras a reforzar. La progresión es subir la velocidad poco a poco.'
+    : state.mode==='auto'
+      ? '<b>Modo libre con micrófono:</b> el estudiante lee solo y el navegador marca lo que reconoce (Chrome/Edge con internet). Úsalo solo para diagnósticos puntuales — el entrenamiento diario es en modo guiado.'
+      : '<b>Modo libre con tutor:</b> el estudiante lee solo; el tutor toca las palabras con error y marca el fin de lectura si no termina. Funciona sin internet.';
+}
+$('#btnMode').addEventListener('click',()=>{
+  if(state.running) return;
+  if(state.practiceMode==='guiado') setPracticeMode('libre','auto');
+  else if(state.mode==='auto') setPracticeMode('libre','manual');
+  else setPracticeMode('guiado');
+});
+setPracticeMode('guiado');
+
+/* ---------- ciclo de práctica ---------- */
+$('#btnStart').addEventListener('click',()=>{
+  stopListening();
+  document.querySelectorAll('#passage .w').forEach(e=>e.classList.remove('ok','err','cur','end'));
+  state.matched=0; state.lastMatched=-1; state.manualErr=new Set(); state.endAt=-1; state.endMarking=false;
+  state.curWordIdx=-1;
+  state.t0=Date.now(); state.running=true;
+  state.timerInt=setInterval(tick,250);
+  $('#btnStart').disabled=true; $('#btnStop').disabled=false;
+  $('#resultCard').classList.add('hidden');
+  if(state.practiceMode==='guiado'){
+    // Lectura guiada en eco: la voz modelo lee con karaoke y el estudiante repite.
+    // El tutor toca los errores sin detener la lectura. Al terminar el modelo, se
+    // cierra la sesión sola (sin interrupciones para el estudiante).
+    if(!('speechSynthesis' in window)){
+      $('#status').textContent='Este navegador no tiene voz. Cambiando a modo libre con tutor.';
+      setPracticeMode('libre','manual');
+      state.running=false; clearInterval(state.timerInt); state.timerInt=null;
+      $('#btnStart').disabled=false; $('#btnStop').disabled=true;
+      return;
+    }
+    const rate=parseFloat($('#rate').value);
+    const voice=pickVoice();
+    speechSynthesis.cancel();
+    const items=buildSpeechItems(listenMode==='corrido'?'palabra':listenMode);
+    speakSeq(items, voice, rate, ()=>{ if(state.running) finishPractice(); });
+    $('#status').textContent='Guiado en eco: el estudiante repite siguiendo la voz y el resaltado. Toca las palabras que lea mal — la lectura no se detiene.';
+  }else if(state.mode==='auto'){
+    state.recogActive=startRecognition();
+    $('#status').textContent = state.recogActive ? 'Escuchando… el estudiante puede empezar a leer.' : 'Modo libre con tutor activo: toca los errores mientras lee.';
+  }else{
+    $('#status').textContent='Tiempo corriendo. Toca las palabras con error.';
+  }
+  $('#status').classList.add('live');
+});
+$('#btnStop').addEventListener('click',()=>finishPractice());
+
+function stopPractice(silent){
+  state.running=false; state.recogActive=false;
+  if(state.timerInt){ clearInterval(state.timerInt); state.timerInt=null; }
+  if(state.recog){ try{state.recog.stop();}catch(_){ } state.recog=null; }
+  if(state.practiceMode==='guiado'){ seqCancel=true; speechSynthesis.cancel(); }
+  $('#btnStart').disabled=false; $('#btnStop').disabled=true;
+}
+
+function finishPractice(){
+  if(!state.running) return;
+  const secs=Math.max(1,(Date.now()-state.t0)/1000);
+  stopPractice();
+  document.querySelectorAll('#passage .w.cur').forEach(e=>e.classList.remove('cur'));
+  const N=state.words.length;
+  let correct, readUpTo, errors;
+  if(state.practiceMode==='guiado'){
+    // el fin de la sesión es donde llegó la voz modelo (todo el texto si terminó)
+    const end = state.curWordIdx>=0 ? state.curWordIdx : N-1;
+    readUpTo=end+1;
+    errors=[...state.manualErr].filter(i=>i<=end).length;
+    correct=Math.max(0,readUpTo-errors);
+    for(let i=0;i<readUpTo;i++){ if(!state.manualErr.has(i)) mark(i,'ok'); }
+  }else if(state.mode==='auto'){
+    correct=state.matched;
+    readUpTo = state.lastMatched>=0 ? state.lastMatched+1 : N;
+    errors = readUpTo - correct;
+  }else{
+    const end = state.endAt>=0 ? state.endAt : N-1;
+    readUpTo=end+1;
+    errors=[...state.manualErr].filter(i=>i<=end).length;
+    correct=Math.max(0,readUpTo-errors);
+    // pintar resultado
+    for(let i=0;i<readUpTo;i++){ if(!state.manualErr.has(i)) mark(i,'ok'); }
+  }
+  const wpm=Math.round(correct/secs*60);
+  const acc=readUpTo>0? Math.round(correct/readUpTo*100) : 0;
+  showResults(wpm,acc,errors,secs,correct,readUpTo);
+}
+
+/* ---------- resultados ---------- */
+let lastResult=null;
+function showResults(wpm,acc,errors,secs,correct,readUpTo){
+  const goal=state.level.goal;
+  $('#mWpm').textContent=wpm;
+  $('#mAcc').textContent=acc+'%';
+  $('#mErr').textContent=errors;
+  $('#mGoal').textContent=state.level.goalTxt;
+  const v=$('#verdict');
+  if(state.practiceMode==='guiado'){
+    // guiado en eco: no hay aprobado/reprobado — solo la velocidad ajustada y qué reforzar
+    if(errors===0){
+      v.className='verdict good';
+      v.textContent=`✅ Sesión limpia a ${wpm} ppm, sin errores. Sube un paso la velocidad en la próxima sesión — esa es la progresión (meta del nivel: ${goal} ppm).`;
+    }else if(acc>=90){
+      v.className='verdict mid';
+      v.textContent=`🟡 ${wpm} ppm con ${errors} error(es) (palabras en rojo). Repite este mismo texto a la misma velocidad mañana; si sale limpio, sube velocidad.`;
+    }else{
+      v.className='verdict low';
+      v.textContent=`🔴 ${errors} errores a ${wpm} ppm. Baja un paso la velocidad o repasa primero en «Escuchar modelo» por sílabas, y repite la sesión.`;
+    }
+  }else if(wpm>=goal && acc>=90){
+    v.className='verdict good';
+    v.textContent=`✅ ¡Meta cumplida! ${wpm} ppm (meta ${goal}) con ${acc}% de precisión. Puede postular al ascenso si lo sostiene 2 semanas.`;
+  }else if(wpm>=goal*0.8){
+    v.className='verdict mid';
+    v.textContent=`🟡 Cerca de la meta: ${wpm} ppm frente a ${goal}. Sigue practicando este texto y vuelve a medir.`;
+  }else{
+    v.className='verdict low';
+    v.textContent=`🔴 Aún en construcción: ${wpm} ppm frente a ${goal}. Refuerza con el modo «Escuchar modelo» y repite mañana.`;
+  }
+  $('#resultCard').classList.remove('hidden');
+  $('#resultCard').scrollIntoView({behavior:'smooth',block:'nearest'});
+  lastResult={
+    fecha:new Date().toISOString(),
+    estudiante:($('#studentName').value||'Sin nombre').trim(),
+    nivel:state.level.id, texto:TEXTS[state.level.id][state.textIdx].title,
+    modo:state.practiceMode==='guiado'?'guiado-eco':state.mode, segundos:Math.round(secs),
+    palabrasLeidas:readUpTo, correctas:correct, errores:errors,
+    wpm:wpm, precision:acc, meta:goal,
+  };
+}
+$('#btnRetry').addEventListener('click',()=>{ resetPractice(); window.scrollTo({top:0,behavior:'smooth'}); });
+$('#btnBack').addEventListener('click',()=>{ document.querySelector('[data-view="home"]').click(); });
+
+/* ===================== historial / progreso ===================== */
+const HKEY='sppc_lectura_historial';
+function loadHist(){ try{ return JSON.parse(localStorage.getItem(HKEY))||[]; }catch(_){ return []; } }
+function saveHist(h){ localStorage.setItem(HKEY,JSON.stringify(h)); }
+$('#btnSave').addEventListener('click',()=>{
+  if(!lastResult) return;
+  const h=loadHist(); h.push(lastResult); saveHist(h);
+  $('#btnSave').textContent='✔ Guardado';
+  setTimeout(()=>{$('#btnSave').textContent='💾 Guardar en progreso';},1500);
+});
+$('#btnClear').addEventListener('click',()=>{
+  if(confirm('¿Borrar todo el historial de esta máquina?')){ saveHist([]); renderHistory(); }
+});
+$('#btnCsv').addEventListener('click',()=>{
+  const h=loadHist(); if(!h.length){ alert('No hay sesiones guardadas.'); return; }
+  const head='fecha,estudiante,nivel,texto,modo,segundos,palabras_leidas,correctas,errores,wpm,precision,meta';
+  const rows=h.map(r=>[r.fecha,r.estudiante,r.nivel,`"${r.texto}"`,r.modo,r.segundos,r.palabrasLeidas,r.correctas,r.errores,r.wpm,r.precision,r.meta].join(','));
+  const blob=new Blob(['﻿'+head+'\n'+rows.join('\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download='sppc_lectura_progreso.csv'; a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+function renderHistory(){
+  const h=loadHist().slice().reverse();
+  const wrap=$('#histWrap');
+  if(!h.length){ wrap.innerHTML='<p class="hint">Aún no hay sesiones guardadas.</p>'; $('#chart').classList.add('hidden'); return; }
+  let html='<table><tr><th>Fecha</th><th>Estudiante</th><th>Nivel</th><th>Texto</th><th>PPM</th><th>Precisión</th><th>Meta</th></tr>';
+  h.slice(0,50).forEach(r=>{
+    const ok=r.wpm>=r.meta&&r.precision>=90, mid=!ok&&r.wpm>=r.meta*0.8;
+    const badge=ok?'<span class="badge g">✔ meta</span>':mid?'<span class="badge y">cerca</span>':'<span class="badge r">refuerzo</span>';
+    const f=new Date(r.fecha);
+    html+=`<tr><td>${f.toLocaleDateString('es-PE')} ${f.toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'})}</td><td>${r.estudiante}</td><td>${r.nivel}</td><td>${r.texto}</td><td><b>${r.wpm}</b></td><td>${r.precision}%</td><td>${badge}</td></tr>`;
+  });
+  html+='</table>';
+  wrap.innerHTML=html;
+  drawChart(loadHist());
+}
+
+function drawChart(h){
+  if(h.length<2){ $('#chart').classList.add('hidden'); return; }
+  const c=$('#chart'); c.classList.remove('hidden');
+  const ctx=c.getContext('2d');
+  const W=c.width=c.offsetWidth*2, H=c.height=380; ctx.scale(1,1);
+  ctx.clearRect(0,0,W,H);
+  const data=h.slice(-20);
+  const max=Math.max(...data.map(r=>r.wpm), ...data.map(r=>r.meta))*1.15;
+  const pad=50, bw=(W-pad*2)/data.length;
+  // línea de meta (usa la meta más reciente)
+  const meta=data[data.length-1].meta;
+  ctx.strokeStyle='#F28482'; ctx.setLineDash([8,6]); ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(pad, H-40-(meta/max)*(H-90)); ctx.lineTo(W-pad, H-40-(meta/max)*(H-90)); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#F28482'; ctx.font='bold 20px Trebuchet MS'; ctx.fillText('meta '+meta+' ppm', pad+6, H-46-(meta/max)*(H-90));
+  data.forEach((r,i)=>{
+    const x=pad+i*bw+bw*0.18, bh=(r.wpm/max)*(H-90);
+    ctx.fillStyle = r.wpm>=r.meta ? '#84A59D' : '#FFCE80';
+    const y=H-40-bh;
+    ctx.beginPath(); ctx.roundRect(x,y,bw*0.64,bh,8); ctx.fill();
+    ctx.fillStyle='#563E79'; ctx.font='bold 20px Trebuchet MS'; ctx.textAlign='center';
+    ctx.fillText(r.wpm, x+bw*0.32, y-8);
+  });
+  ctx.fillStyle='#8a7a99'; ctx.font='18px Trebuchet MS'; ctx.textAlign='left';
+  ctx.fillText('Palabras por minuto · últimas '+data.length+' sesiones', pad, 26);
+}
+
+/* ===================== init ===================== */
+// El modo guiado en eco no necesita reconocimiento de voz (solo la voz modelo);
+// si el navegador no tiene micrófono, el ciclo de modos solo omite el submodo libre con micrófono.
+if(!SR && state.practiceMode==='libre' && state.mode==='auto') setPracticeMode('libre','manual');
+if('speechSynthesis' in window){
+  loadVoices();
+  speechSynthesis.onvoiceschanged=loadVoices;
+}
+renderLevels();
+renderRecentFiles();
+</script>
+</body>
+</html>
