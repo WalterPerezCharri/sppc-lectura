@@ -198,7 +198,7 @@
     </div>
     <div>
       <h1>SPPC · Entrenador de Lectura</h1>
-      <div class="sub">SISTEMA PIRAMIDAL DE PRÁCTICA CONTINUA — PROTOTIPO 1.4</div>
+      <div class="sub">SISTEMA PIRAMIDAL DE PRÁCTICA CONTINUA — PROTOTIPO 1.4.2</div>
     </div>
     <span class="tag">100 % local · sin internet</span>
   </header>
@@ -328,7 +328,7 @@
     </div>
   </section>
 
-  <footer>SPPC · Módulo de lectura — prototipo local v1.4 · Los datos se guardan solo en este dispositivo.</footer>
+  <footer>SPPC · Módulo de lectura — prototipo local v1.4.2 · Los datos se guardan solo en este dispositivo.</footer>
 </div>
 <script>
 /* ================================================================
@@ -797,6 +797,32 @@ function speakText(w){
   return w;
 }
 
+/* v1.4.2 — Escudo universal contra siglas y símbolos en sílabas aisladas.
+   Las voces TTS buscan cada fragmento en su diccionario de siglas/símbolos:
+   "na"→sodio (Na), "sa"→"ese-a" (SA), "ri"→"ere-i" (RI), "dia"→"de-i-a" (DIA),
+   "au"→oro (Au), "cia"→CIA… Imposible enumerarlas todas, así que en vez de una
+   lista se acentúa la VOCAL TÓNICA de toda sílaba hablada:
+   - La tilde NO cambia el sonido de una sílaba aislada: va en la vocal fuerte
+     (diá=/dja/, fué=/fwe/, cuá=/kwa/) o en la única vocal (ná, sá, rí) — en
+     ambos casos suena exactamente igual que sin tilde.
+   - Pero el texto ya no coincide con ninguna sigla/símbolo del diccionario,
+     así que la voz lo lee fonéticamente. Cobertura del 100%, presente y futura.
+   Reglas: tónica = primera vocal fuerte (a/e/o); si solo hay débiles (iu, ui),
+   la última. La "u" muda de que/qui/gue/gui no cuenta. Se omiten sílabas de
+   una letra ("a","o") y las que terminan en "y" (hay, rey, soy: se leen bien). */
+function fixSyllableSpeech(s){
+  const t=s.trim();
+  if(t.length<2 || /[áéíóú]/.test(t) || /y$/.test(t)) return t;
+  const masked=t.replace(/(?<=[qg])u(?=[ei])/g,'\u0001');      // u muda no es vocal
+  const vm=[...masked.matchAll(/[aeiou]/g)];
+  if(!vm.length) return t;                                      // números, siglas sin vocal
+  let tonic=-1;
+  for(const m of vm){ if('aeo'.includes(m[0])){ tonic=m.index; break; } }
+  if(tonic<0) tonic=vm[vm.length-1].index;                      // solo débiles: tónica la última
+  const acc={a:'á',e:'é',i:'í',o:'ó',u:'ú'};
+  return (masked.slice(0,tonic)+acc[masked[tonic]]+masked.slice(tonic+1)).replace(/\u0001/g,'u');
+}
+
 /* ---------- lectura secuencial (karaoke exacto) ---------- */
 function speakSeq(items, voice, rate){
   seqCancel=false; let i=0;
@@ -862,7 +888,7 @@ $('#btnListen').addEventListener('click',()=>{
       }else{
         const syl=syllabify(w.raw);
         syl.forEach((s,si)=>{
-          items.push({ text:speakText(s), wordIndex:wi, gapAfter: si===syl.length-1 ? pause : Math.max(180, Math.round(pause*0.45)) });
+          items.push({ text:speakText(fixSyllableSpeech(s)), wordIndex:wi, gapAfter: si===syl.length-1 ? pause : Math.max(180, Math.round(pause*0.45)) });
         });
       }
     });
