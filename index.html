@@ -198,7 +198,7 @@
     </div>
     <div>
       <h1>SPPC · Entrenador de Lectura</h1>
-      <div class="sub">SISTEMA PIRAMIDAL DE PRÁCTICA CONTINUA — PROTOTIPO 1.2.1</div>
+      <div class="sub">SISTEMA PIRAMIDAL DE PRÁCTICA CONTINUA — PROTOTIPO 1.4</div>
     </div>
     <span class="tag">100 % local · sin internet</span>
   </header>
@@ -215,6 +215,16 @@
       <h2>¿Quién practica hoy?</h2>
       <label class="fl" for="studentName">Nombre del estudiante</label>
       <input class="namein" id="studentName" placeholder="Escribe el nombre…" autocomplete="off">
+    </div>
+    <div class="card">
+      <h2>📂 Cargar cuentos y libros externos</h2>
+      <div class="hint">Abre archivos <b>.pdf</b> o <b>.txt</b> (puedes elegir varios a la vez). Los .txt con encabezados <b>NIVEL:</b> y <b>TITULO:</b> se clasifican solos; los libros largos se dividen en partes de práctica automáticamente. Nota: un PDF escaneado (foto de páginas) no tiene texto extraíble. Los textos cargados duran solo esta sesión — la biblioteca viaja en tus archivos, no en la máquina.</div>
+      <div class="toolbar">
+        <button class="btn sage" id="btnLoadFile">📂 Abrir archivos PDF o texto…</button>
+        <button class="btn ghost" id="btnTemplate">⬇ Descargar plantilla .txt</button>
+        <input type="file" id="fileInput" accept=".txt,.md,.text,.pdf" multiple class="hidden">
+      </div>
+      <div class="statusline" id="loadStatus"></div>
     </div>
     <div class="card">
       <h2>Elige el nivel de la escalera</h2>
@@ -318,7 +328,7 @@
     </div>
   </section>
 
-  <footer>SPPC · Módulo de lectura — prototipo local v1.2.1 · Los datos se guardan solo en este dispositivo.</footer>
+  <footer>SPPC · Módulo de lectura — prototipo local v1.4 · Los datos se guardan solo en este dispositivo.</footer>
 </div>
 <script>
 /* ================================================================
@@ -414,6 +424,241 @@ function renderLevels(){
     list.appendChild(el);
   });
 }
+
+/* ===================== archivos externos (.txt) ===================== */
+function parseExtFile(txt, filename, defaultLevel){
+  const raw=txt.replace(/^﻿/,''); // quitar BOM
+  const lines=raw.split(/\r?\n/);
+  let level=defaultLevel;
+  let title=filename.replace(/\.[^.]+$/,'').replace(/[-_]+/g,' ').trim();
+  let bodyStart=0;
+  for(let i=0;i<Math.min(6,lines.length);i++){
+    const mN=lines[i].match(/^\s*NIVEL\s*:\s*(L[1-6])\s*$/i);
+    const mT=lines[i].match(/^\s*T[IÍ]TULO\s*:\s*(.+?)\s*$/i);
+    if(mN){ level=mN[1].toUpperCase(); bodyStart=Math.max(bodyStart,i+1); }
+    else if(mT){ title=mT[1]; bodyStart=Math.max(bodyStart,i+1); }
+    else if(lines[i].trim()==='' && bodyStart>0){ bodyStart=i+1; break; }
+  }
+  const body=lines.slice(bodyStart).join(' ').replace(/\s+/g,' ').trim();
+  if(!body) return [];
+  return splitLongText(body,title,level);
+}
+
+/* Divide textos largos en partes de práctica (~250 palabras, por oraciones) */
+function splitLongText(body,title,level){
+  const words=body.split(/\s+/).filter(Boolean);
+  if(words.length<=500) return [{level,title,body,ext:true}];
+  const sentences=body.match(/[^.!?]+[.!?]+["')\]]*\s*|[^.!?]+$/g)||[body];
+  const parts=[]; let cur='', curN=0;
+  for(const s of sentences){
+    const n=s.trim().split(/\s+/).filter(Boolean).length;
+    if(curN+n>250 && cur){ parts.push(cur.trim()); cur=''; curN=0; }
+    cur+=s; curN+=n;
+  }
+  if(cur.trim()) parts.push(cur.trim());
+  return parts.map((b,i)=>({level, title:`${title} — Parte ${i+1}/${parts.length}`, body:b, ext:true}));
+}
+
+/* ===================== extractor PDF (básico, sin librerías) =====================
+   Lee texto de PDFs comunes (Word/Acrobat): flujos /FlateDecode descomprimidos
+   con DecompressionStream y operadores de texto Tj/TJ/Td/T*. Los PDF escaneados
+   (solo imágenes) no tienen texto extraíble y se reportan. */
+async function pdfInflate(u8){
+  const ds=new DecompressionStream('deflate');
+  const st=new Blob([u8]).stream().pipeThrough(ds);
+  return new Uint8Array(await new Response(st).arrayBuffer());
+}
+function pdfAscii85(u8){
+  const out=[]; let tuple=0, count=0;
+  for(const b of u8){
+    if(b===0x7E) break;                       // ~> fin de datos
+    if(b<=32) continue;                       // espacios
+    if(b===0x7A && count===0){ out.push(0,0,0,0); continue; } // 'z' = 4 ceros
+    tuple=tuple*85+(b-33); count++;
+    if(count===5){
+      out.push((tuple>>>24)&255,(tuple>>>16)&255,(tuple>>>8)&255,tuple&255);
+      tuple=0; count=0;
+    }
+  }
+  if(count>0){
+    for(let i=count;i<5;i++) tuple=tuple*85+84;
+    const bytes=[(tuple>>>24)&255,(tuple>>>16)&255,(tuple>>>8)&255,tuple&255];
+    for(let i=0;i<count-1;i++) out.push(bytes[i]);
+  }
+  return Uint8Array.from(out);
+}
+function pdfUnescape(s){
+  return s.replace(/\\([nrtbf\\()])/g,(m,c)=>({n:'\n',r:'\r',t:'\t',b:'\b',f:'\f','\\':'\\','(':'(',')':')'}[c]))
+          .replace(/\\([0-7]{1,3})/g,(m,o)=>String.fromCharCode(parseInt(o,8)));
+}
+function pdfDecodeStr(s){
+  s=pdfUnescape(s);
+  // Muchos PDFs de Windows usan WinAnsi/Latin-1: bytes 0x80-0x9F con tildes comunes
+  return s.replace(/[\u0080-\u009F]/g,c=>String.fromCharCode(c.charCodeAt(0)));
+}
+/* UTF-16BE hex -> texto (valores del mapa ToUnicode) */
+function pdfUtf16be(hex){
+  let s='';
+  for(let i=0;i+4<=hex.length;i+=4) s+=String.fromCharCode(parseInt(hex.slice(i,i+4),16));
+  return s;
+}
+/* Parsea un CMap ToUnicode (beginbfchar / beginbfrange) */
+function pdfParseCMap(src){
+  const map=new Map();
+  for(const bm of src.matchAll(/beginbfchar([\s\S]*?)endbfchar/g))
+    for(const lm of bm[1].matchAll(/<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>/g))
+      map.set(lm[1].toUpperCase(), pdfUtf16be(lm[2]));
+  for(const bm of src.matchAll(/beginbfrange([\s\S]*?)endbfrange/g))
+    for(const lm of bm[1].matchAll(/<([0-9A-Fa-f]+)>\s*<([0-9A-Fa-f]+)>\s*(?:<([0-9A-Fa-f]+)>|\[([^\]]*)\])/g)){
+      const lo=parseInt(lm[1],16), hi=parseInt(lm[2],16), keyLen=lm[1].length;
+      if(lm[3]){
+        const dhex=lm[3], base=parseInt(dhex.slice(-4),16);
+        for(let c=lo;c<=hi;c++){
+          const last=(base+(c-lo)).toString(16).toUpperCase().padStart(4,'0');
+          map.set(c.toString(16).toUpperCase().padStart(keyLen,'0'), pdfUtf16be(dhex.slice(0,-4)+last));
+        }
+      }else if(lm[4]){
+        const arr=[...lm[4].matchAll(/<([0-9A-Fa-f]+)>/g)].map(x=>x[1]);
+        arr.forEach((d,i)=>map.set((lo+i).toString(16).toUpperCase().padStart(keyLen,'0'), pdfUtf16be(d)));
+      }
+    }
+  return map;
+}
+/* Cadena hex <…> -> texto, usando el CMap de la fuente activa (fuentes CID de Word/LibreOffice/Docs) */
+function pdfDecodeHex(hex,cmap,codeLen){
+  hex=hex.toUpperCase().replace(/[^0-9A-F]/g,'');
+  let s='', i=0;
+  while(i+2<=hex.length){
+    let k=hex.slice(i,i+codeLen), v=cmap&&cmap.get(k);
+    if(v===undefined && codeLen!==2){ k=hex.slice(i,i+2); v=cmap&&cmap.get(k); }
+    if(v!==undefined){ s+=v; i+=k.length; }
+    else{ s+=String.fromCharCode(parseInt(hex.slice(i,i+2),16)); i+=2; }
+  }
+  return s;
+}
+function pdfTextFromContent(src,fonts){
+  fonts=fonts||new Map();
+  let out=''; let prevOpNewline=false; let curCmap=null, curCodeLen=2;
+  const re=/\/F[\w.]+\s+[\d.]+\s+Tf|<[0-9A-Fa-f\s]+>\s*Tj|\((?:\\.|[^\\()])*\)\s*Tj|\[(?:[^\[\]]|\\.)*\]\s*TJ|T[dD*](?=[\s\[])|ET(?=[\s(])/g;
+  let m;
+  while((m=re.exec(src))){
+    const tok=m[0];
+    if(/Tf$/.test(tok)){                       // cambio de fuente: actualiza el CMap activo
+      const fn=(/\/(F[\w.]+)/.exec(tok)||[])[1];
+      curCmap=fonts.get(fn)||null;
+      if(curCmap) curCodeLen=Math.max(2,...[...curCmap.keys()].map(k=>k.length));
+      continue;
+    }
+    if(/^<[0-9A-Fa-f\s]+>\s*Tj$/.test(tok)){
+      const hex=tok.slice(1,tok.search(/>\s*Tj$/));
+      if(prevOpNewline && out && !/\s$/.test(out)) out+=' ';
+      out+=pdfDecodeHex(hex,curCmap,curCodeLen); prevOpNewline=false;
+    }else if(/\)\s*Tj$/.test(tok)){
+      const str=tok.slice(1,tok.search(/\)\s*Tj$/));
+      if(prevOpNewline && out && !/\s$/.test(out)) out+=' ';
+      out+=pdfDecodeStr(str); prevOpNewline=false;
+    }else if(/\]\s*TJ$/.test(tok)){
+      const inner=tok.slice(1,tok.search(/\]\s*TJ$/));
+      const parts=inner.match(/<[0-9A-Fa-f\s]+>|\((?:\\.|[^\\()])*\)|-?\d+(?:\.\d+)?/g)||[];
+      let line='';
+      for(const p of parts){
+        if(p.startsWith('(')) line+=pdfDecodeStr(p.slice(1,-1));
+        else if(p.startsWith('<')) line+=pdfDecodeHex(p.slice(1,-1),curCmap,curCodeLen);
+        else if(parseFloat(p)<-120) line+=' ';  // espacio entre palabras (ajuste de kerning)
+      }
+      if(prevOpNewline && out && !/\s$/.test(out)) out+=' ';
+      out+=line; prevOpNewline=false;
+    }else{                                     // Td / TD / T* / ET: fin de línea
+      if(out && !/\s$/.test(out)) out+='\n'; prevOpNewline=true;
+    }
+  }
+  return out;
+}
+async function extractPdfText(buf){
+  const u8=new Uint8Array(buf);
+  const latin1=new TextDecoder('latin1');
+  const raw=latin1.decode(u8);
+  // 1) localiza objetos y decodifica todos sus flujos (ASCII85 y/o Flate)
+  const objs=[]; const objRe=/(\d+)\s+0\s+obj/g; let om;
+  while((om=objRe.exec(raw))) objs.push({num:+om[1], idx:om.index});
+  const streams=new Map();
+  for(let k=0;k<objs.length;k++){
+    const segEnd=k+1<objs.length?objs[k+1].idx:raw.length;
+    const seg=raw.slice(objs[k].idx,segEnd);
+    const smM=/stream\r?\n/.exec(seg);
+    if(!smM) continue;
+    const sStart=smM.index+smM[0].length;
+    const sEnd=seg.indexOf('endstream',sStart);
+    if(sEnd<0) continue;
+    try{
+      let data=u8.subarray(objs[k].idx+sStart,objs[k].idx+sEnd);
+      if(/ASCII85Decode/.test(seg.slice(0,smM.index))) data=pdfAscii85(data);
+      if(/FlateDecode/.test(seg.slice(0,smM.index))) data=await pdfInflate(data);
+      streams.set(objs[k].num,latin1.decode(data));
+    }catch(_){}
+  }
+  // 2) mapas ToUnicode de las fuentes
+  const cmaps=new Map();
+  for(const [num,src] of streams) if(/beginbf/.test(src)) cmaps.set(num,pdfParseCMap(src));
+  // 3) objeto de fuente -> CMap
+  const fontObjToCmap=new Map();
+  for(let k=0;k<objs.length;k++){
+    const seg=raw.slice(objs[k].idx,k+1<objs.length?objs[k+1].idx:raw.length);
+    const tu=/\/ToUnicode\s+(\d+)\s+0\s+R/.exec(seg);
+    if(tu&&cmaps.has(+tu[1])) fontObjToCmap.set(objs[k].num,cmaps.get(+tu[1]));
+  }
+  // 4) nombre de recurso (/F1…) -> CMap
+  const fonts=new Map();
+  for(const fm of raw.matchAll(/\/(F[\w.]+)\s+(\d+)\s+0\s+R/g))
+    if(fontObjToCmap.has(+fm[2])&&!fonts.has(fm[1])) fonts.set(fm[1],fontObjToCmap.get(+fm[2]));
+  // 5) extrae el texto de los flujos de contenido (en orden de objeto)
+  let text='';
+  for(const num of [...streams.keys()].sort((a,b)=>a-b)){
+    const src=streams.get(num);
+    if(/\bBT\b/.test(src)&&!/beginbf/.test(src)) text+=pdfTextFromContent(src,fonts)+'\n';
+  }
+  return text.replace(/[ \t]+/g,' ').replace(/\n{3,}/g,'\n\n').trim();
+}
+
+$('#btnLoadFile').addEventListener('click',()=>$('#fileInput').click());
+$('#fileInput').addEventListener('change',async e=>{
+  const files=[...e.target.files]; if(!files.length) return;
+  let added=0; const levels=new Set(); const failed=[];
+  $('#loadStatus').textContent='Leyendo archivos…';
+  for(const f of files){
+    try{
+      if(/\.pdf$/i.test(f.name)){
+        const text=await extractPdfText(await f.arrayBuffer());
+        const nWords=text.split(/\s+/).filter(Boolean).length;
+        if(nWords<15){ failed.push(`${f.name} (sin texto legible — ¿escaneado?)`); continue; }
+        const title=f.name.replace(/\.pdf$/i,'').replace(/[_-]+/g,' ').trim();
+        splitLongText(text.replace(/\s+/g,' '),title,state.level.id).forEach(t=>{
+          TEXTS[t.level].push({title:t.title, body:t.body, ext:true});
+          added++; levels.add(t.level);
+        });
+      }else{
+        const txt=await f.text();
+        parseExtFile(txt, f.name, state.level.id).forEach(t=>{
+          TEXTS[t.level].push({title:t.title, body:t.body, ext:true});
+          added++; levels.add(t.level);
+        });
+      }
+    }catch(_){ failed.push(f.name); }
+  }
+  $('#loadStatus').textContent = (added
+    ? `✔ ${added} texto(s)/parte(s) agregados (${[...levels].join(', ')}). Solo para esta sesión — no se copian a la máquina.`
+    : 'No se pudo leer ningún texto de los archivos seleccionados.')
+    + (failed.length?` ⚠ No se pudo extraer: ${failed.join(', ')}.`:'');
+  renderLevels();
+  e.target.value='';
+});
+$('#btnTemplate').addEventListener('click',()=>{
+  const demo='NIVEL: L2\nTITULO: El mercado del sábado\n\nLos sábados voy al mercado con mi abuela. Ella compra papas, tomates y frutas dulces. El señor del puesto nos regala una mandarina.\n\n(…escribe o pega aquí el resto del cuento…)\n\nREGLAS DEL FORMATO:\n- Línea 1: NIVEL: L1 (puede ser L1 a L6; si la omites, se usa el nivel elegido en pantalla)\n- Línea 2: TITULO: nombre del cuento (si la omites, se usa el nombre del archivo)\n- Línea en blanco y luego el texto completo.\n- Si el texto pasa de 500 palabras, el sistema lo divide en partes de práctica automáticamente.';
+  const blob=new Blob([demo],{type:'text/plain;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download='plantilla_cuento_sppc.txt'; a.click();
+  URL.revokeObjectURL(a.href);
+});
 
 /* ===================== preparar lectura ===================== */
 function openText(i){
