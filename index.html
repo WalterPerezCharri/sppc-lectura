@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SPPC · Entrenador de Lectura v2.1</title>
+<title>SPPC · Entrenador de Lectura v2.2</title>
 <script src="pdf.min.js"></script>
 <style>
   :root{
@@ -48,6 +48,9 @@
   #docLevel{font-size:.68rem;background:var(--accent);color:#fff;padding:2px 7px;border-radius:3px;font-weight:700;flex-shrink:0}
   .tb-sep{width:1px;height:26px;background:var(--toolbar-line);flex-shrink:0}
   .tb-group{display:flex;align-items:center;gap:2px;flex-shrink:0}
+  #btnStop:not(:disabled){background:var(--err);border-color:var(--err);color:#fff}
+  #btnStop:not(:disabled):hover{background:#c93438}
+  #btnStop:not(:disabled) svg{stroke:#fff;fill:#fff}
   .tb-btn{color:var(--ink-dim);height:34px;min-width:34px;padding:0 8px;display:flex;align-items:center;justify-content:center;gap:6px;border-radius:3px;font-size:.82rem;transition:all .15s}
   .tb-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
   .tb-btn:hover{background:#33393f;color:#fff}
@@ -194,7 +197,7 @@
 
   <!-- ======== riel lateral ======== -->
   <nav id="rail">
-    <div class="rail-logo" title="SPPC · Entrenador de Lectura — PROTOTIPO 2.1">S</div>
+    <div class="rail-logo" title="SPPC · Entrenador de Lectura — PROTOTIPO 2.2">S</div>
     <button class="rail-btn active" data-panel="library" title="Biblioteca de textos">
       <svg viewBox="0 0 24 24"><path d="M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19a2 2 0 0 0 2 2h13"/><path d="M9 7h6M9 11h4"/></svg>
     </button>
@@ -263,7 +266,7 @@
           <div id="wordLayer"></div>
           <div class="textsheet welcome" id="welcomePage">
             <h1>Entrenador de Lectura SPPC</h1>
-            <div class="sub">Sistema Piramidal de Práctica Continua · Academia Cerro de Pasco · 7 a 17 años · PROTOTIPO 2.1</div>
+            <div class="sub">Sistema Piramidal de Práctica Continua · Academia Cerro de Pasco · 7 a 17 años · PROTOTIPO 2.2</div>
             <ol>
               <li>Abre un <b>PDF o TXT</b> con el botón <b>Abrir archivo</b> (o un texto de la <b>Biblioteca</b>).</li>
               <li>Pulsa <b>▶ Leer</b>: la voz modelo lee y <b>resalta cada palabra</b> como karaoke.</li>
@@ -453,7 +456,12 @@ const state={
   recog:null, recogActive:false,
 };
 let listenMode='palabra';   // 'corrido' | 'palabra' | 'silabas'
-let seqCancel=false, listenFallback=null, utter=null, voicePitch=1;
+let listenFallback=null, utter=null, voicePitch=1;
+/* Token de ejecución: stopAll() lo incrementa y cualquier bucle de lectura
+   viejo (aunque esté dormido en una pausa) muere al despertar. Así nunca
+   hay dos lecturas en paralelo. */
+let seqToken=0;
+const seqDead=t=>t!==seqToken;
 
 /* ===================== paneles laterales ===================== */
 const PANEL_TITLES={library:'Biblioteca',voice:'Voz y velocidad',progress:'Progreso',help:'Instrucciones'};
@@ -767,9 +775,9 @@ function fmt(s){ s=Math.max(0,Math.floor(s)); return Math.floor(s/60)+':'+String
 function startTimer(){ state.t0=Date.now(); stopTimer(); state.timerInt=setInterval(()=>{ $('#timer').textContent=fmt((Date.now()-state.t0)/1000); },500); }
 function stopTimer(){ if(state.timerInt){ clearInterval(state.timerInt); state.timerInt=null; } }
 
-function speakOne(text){
+function speakOne(text,my){
   return new Promise(res=>{
-    if(seqCancel) return res();
+    if(seqDead(my)) return res();
     const u=new SpeechSynthesisUtterance(text);
     const v=pickVoice(); if(v) u.voice=v;
     u.lang=(v&&v.lang)||'es-PE';
@@ -781,42 +789,42 @@ function speakOne(text){
 }
 
 /* lee una palabra según el modo: por palabra o por sílabas (con escudo anti-siglas) */
-async function speakWord(w){
+async function speakWord(w,my){
   if(listenMode==='silabas'){
     const syl=syllabify(w.toLowerCase()).map(fixSyllableSpeech);
     for(const s of syl){
-      if(seqCancel) return;
-      await speakOne(s);
-      if(!seqCancel) await sleep(wordPause()*0.4);
+      if(seqDead(my)) return;
+      await speakOne(s,my);
+      if(!seqDead(my)) await sleep(wordPause()*0.4);
     }
   }else{
-    await speakOne(speakText(w));
+    await speakOne(speakText(w),my);
   }
 }
 
 /* karaoke secuencial palabra a palabra (modos palabra / sílabas) */
-async function speakSeq(){
+async function speakSeq(my){
   const d=state.doc; if(!d) return;
   const total=state.flat.length;
   for(let i=0;i<total;i++){
-    if(seqCancel) break;
+    if(seqDead(my)) break;
     const o=state.flat[i];
     if(d.kind==='pdf' && o.page+1!==state.curPage){
       await renderPdfPage(o.page+1);
-      if(seqCancel) break;
+      if(seqDead(my)) break;
     }
     state.curFlat=i;
     highlightWord(i);
-    await speakWord(o.w);
-    if(seqCancel) break;
+    await speakWord(o.w,my);
+    if(seqDead(my)) break;
     mark(i,'ok');
-    if(!seqCancel) await sleep(wordPause());
+    if(!seqDead(my)) await sleep(wordPause());
   }
-  document.querySelectorAll('.wword.cur,.tw.cur').forEach(el=>el.classList.remove('cur'));
+  if(!seqDead(my)) document.querySelectorAll('.wword.cur,.tw.cur').forEach(el=>el.classList.remove('cur'));
 }
 
 /* lectura continua con resaltado por onboundary (modo corrido) */
-function speakCorrido(){
+function speakCorrido(my){
   return new Promise(res=>{
     const d=state.doc;
     const idx=[]; let pos=0;
@@ -832,11 +840,11 @@ function speakCorrido(){
       return wi;
     };
     const show=wi=>{
-      if(seqCancel) return;
+      if(seqDead(my)) return;
       const page=state.flat[wi].page;
       state.curFlat=wi;
       if(d.kind==='pdf' && page+1!==state.curPage){
-        renderPdfPage(page+1).then(()=>{ if(!seqCancel) highlightWord(wi); });
+        renderPdfPage(page+1).then(()=>{ if(!seqDead(my)) highlightWord(wi); });
       }else highlightWord(wi);
     };
     u.onboundary=e=>{
@@ -852,7 +860,7 @@ function speakCorrido(){
     const msPerWord=Math.max(180, 60000/(170*curRate()));
     let wi=0;
     listenFallback=setInterval(()=>{
-      if(gotBoundary || seqCancel){ clearInterval(listenFallback); listenFallback=null; return; }
+      if(gotBoundary || seqDead(my)){ clearInterval(listenFallback); listenFallback=null; return; }
       show(wi++);
       if(wi>=idx.length){ clearInterval(listenFallback); listenFallback=null; }
     }, msPerWord);
@@ -860,14 +868,19 @@ function speakCorrido(){
 }
 
 async function runVoiceModel(){
-  seqCancel=false;
-  if(listenMode==='corrido') await speakCorrido();
-  else await speakSeq();
+  const my=++seqToken;              // invalida cualquier lectura anterior
+  try{ speechSynthesis.cancel(); }catch(e){}  // vacía la cola de voz vieja
+  if(listenFallback){ clearInterval(listenFallback); listenFallback=null; }
+  await sleep(60);                  // deja que el motor TTS procese el cancel
+  if(seqDead(my)) return;
+  if(listenMode==='corrido') await speakCorrido(my);
+  else await speakSeq(my);
 }
 
 function stopAll(){
-  seqCancel=true;
+  seqToken++;                       // mata cualquier bucle de lectura vivo
   try{ speechSynthesis.cancel(); }catch(e){}
+  document.querySelectorAll('.wword.cur,.tw.cur').forEach(el=>el.classList.remove('cur'));
   if(listenFallback){ clearInterval(listenFallback); listenFallback=null; }
   if(state.recogActive && state.recog){ try{ state.recog.stop(); }catch(e){} state.recogActive=false; }
   stopTimer();
@@ -971,6 +984,7 @@ function startLibreManual(){
 function finishPractice(){
   if(!state.running) return;
   state.running=false;
+  seqToken++;                       // mata el bucle de lectura si aún corre
   stopTimer();
   try{ speechSynthesis.cancel(); }catch(e){}
   if(listenFallback){ clearInterval(listenFallback); listenFallback=null; }

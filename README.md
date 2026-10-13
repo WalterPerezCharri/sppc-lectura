@@ -1,9 +1,16 @@
-# SPPC · Entrenador de Lectura — v2.1
+# SPPC · Entrenador de Lectura — v2.2
 
 Sistema Piramidal de Práctica Continua para la academia **Proyecto Academia Cerro de Pasco**.
 Entrenador de fluidez lectora para estudiantes de **7 a 17 años**, con niveles **L1–L10** (metas de 20 a 200 palabras por minuto, de 20 en 20).
 
-## Qué hay de nuevo en v2.1
+## Qué hay de nuevo en v2.2
+
+- **Botón ■ Stop rojo** junto a Leer, bien visible.
+- **Stop definitivo**: al detener una lectura, la voz y el resaltado se cortan por
+  completo. Cambiar la velocidad o el modo y volver a empezar nunca deja dos
+  lecturas sonando en paralelo.
+
+### v2.1
 
 - **Niveles L1–L10**: las metas de velocidad avanzan de 20 en 20 ppm (20, 40, 60 … 200).
 - El cuadro de resultados tiene botón **✕** para cerrarlo directamente.
