@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SPPC · Entrenador de Lectura v2.0</title>
+<title>SPPC · Entrenador de Lectura v2.1</title>
 <script src="pdf.min.js"></script>
 <style>
   :root{
@@ -172,7 +172,9 @@
   /* ---------- modal de resultados ---------- */
   #modalWrap{position:fixed;inset:0;background:rgba(15,17,20,.55);display:flex;align-items:center;justify-content:center;z-index:50}
   #modal{background:#fff;width:460px;max-width:92vw;border-radius:6px;box-shadow:0 12px 40px rgba(0,0,0,.4);overflow:hidden}
-  #modal .m-head{padding:16px 20px;border-bottom:1px solid var(--line);font-weight:700;font-size:1rem}
+  #modal .m-head{padding:16px 20px;border-bottom:1px solid var(--line);font-weight:700;font-size:1rem;display:flex;align-items:center;justify-content:space-between}
+  #modal .m-x{background:none;border:none;font-size:.95rem;line-height:1;color:var(--muted);cursor:pointer;padding:6px 8px;border-radius:4px}
+  #modal .m-x:hover{background:#f0f1f3;color:var(--text)}
   #modal .m-body{padding:18px 20px}
   .verdict{padding:11px 13px;border-radius:4px;font-weight:600;font-size:.9rem;line-height:1.45;margin-bottom:14px}
   .verdict.good{background:#e7f4ee;color:#0d5c43}
@@ -192,7 +194,7 @@
 
   <!-- ======== riel lateral ======== -->
   <nav id="rail">
-    <div class="rail-logo" title="SPPC · Entrenador de Lectura — PROTOTIPO 2.0">S</div>
+    <div class="rail-logo" title="SPPC · Entrenador de Lectura — PROTOTIPO 2.1">S</div>
     <button class="rail-btn active" data-panel="library" title="Biblioteca de textos">
       <svg viewBox="0 0 24 24"><path d="M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19a2 2 0 0 0 2 2h13"/><path d="M9 7h6M9 11h4"/></svg>
     </button>
@@ -261,7 +263,7 @@
           <div id="wordLayer"></div>
           <div class="textsheet welcome" id="welcomePage">
             <h1>Entrenador de Lectura SPPC</h1>
-            <div class="sub">Sistema Piramidal de Práctica Continua · Academia Cerro de Pasco · 7 a 17 años · PROTOTIPO 2.0</div>
+            <div class="sub">Sistema Piramidal de Práctica Continua · Academia Cerro de Pasco · 7 a 17 años · PROTOTIPO 2.1</div>
             <ol>
               <li>Abre un <b>PDF o TXT</b> con el botón <b>Abrir archivo</b> (o un texto de la <b>Biblioteca</b>).</li>
               <li>Pulsa <b>▶ Leer</b>: la voz modelo lee y <b>resalta cada palabra</b> como karaoke.</li>
@@ -368,7 +370,7 @@
 <!-- ======== modal resultados ======== -->
 <div id="modalWrap" class="hidden">
   <div id="modal">
-    <div class="m-head">Resultado de la sesión</div>
+    <div class="m-head">Resultado de la sesión <button class="m-x" id="btnCloseModal" title="Cerrar">✕</button></div>
     <div class="m-body">
       <div class="verdict good" id="verdict">—</div>
       <div class="metrics">
@@ -390,12 +392,16 @@
 <script>
 /* ===================== datos SPPC ===================== */
 const LEVELS=[
-  { id:'L1', ages:'7–8 años',   goal:20,  goalTxt:'20 ppm',  desc:'Sílabas y oraciones simples' },
-  { id:'L2', ages:'9–10 años',  goal:100, goalTxt:'100 ppm', desc:'Oraciones y párrafos' },
-  { id:'L3', ages:'11–12 años', goal:130, goalTxt:'130 ppm', desc:'Textos completos' },
-  { id:'L4', ages:'13–14 años', goal:160, goalTxt:'160 ppm', desc:'Lectura de libros' },
-  { id:'L5', ages:'15–16 años', goal:185, goalTxt:'185 ppm', desc:'Ensayo y prensa' },
-  { id:'L6', ages:'16–17 años', goal:200, goalTxt:'200+ ppm',desc:'Síntesis crítica' },
+  { id:'L1',  ages:'7–8 años',  goal:20,  goalTxt:'20 ppm',  desc:'Sílabas y oraciones simples' },
+  { id:'L2',  ages:'9 años',    goal:40,  goalTxt:'40 ppm',  desc:'Oraciones' },
+  { id:'L3',  ages:'10 años',   goal:60,  goalTxt:'60 ppm',  desc:'Oraciones y párrafos' },
+  { id:'L4',  ages:'11 años',   goal:80,  goalTxt:'80 ppm',  desc:'Párrafos completos' },
+  { id:'L5',  ages:'12 años',   goal:100, goalTxt:'100 ppm', desc:'Textos completos' },
+  { id:'L6',  ages:'13 años',   goal:120, goalTxt:'120 ppm', desc:'Textos completos' },
+  { id:'L7',  ages:'14 años',   goal:140, goalTxt:'140 ppm', desc:'Lectura de libros' },
+  { id:'L8',  ages:'15 años',   goal:160, goalTxt:'160 ppm', desc:'Lectura de libros' },
+  { id:'L9',  ages:'16 años',   goal:180, goalTxt:'180 ppm', desc:'Ensayo y prensa' },
+  { id:'L10', ages:'17 años',   goal:200, goalTxt:'200 ppm', desc:'Síntesis crítica' },
 ];
 const TEXTS={
   L1:[
@@ -423,6 +429,11 @@ const TEXTS={
     { title:'Carta a un joven que estudia', body:'Te escribo porque me preguntaste si vale la pena esforzarse. Mira: nadie recuerda al atleta que entrenó solo cuando ganaba, sino al que entrenó también los días malos. El estudio es igual. No se trata de talento, esa palabra que usamos para no mirar el esfuerzo ajeno; se trata de método: practicar un poco cada día, medir el avance sin mentirse y corregir enseguida. La lectura veloz que hoy te cuesta será mañana tu ventaja silenciosa: entenderás antes, decidirás mejor y nadie podrá engañarte con facilidad. Cuando dudes, recuerda la escalera: no importa el peldaño en el que estás, importa que no te detengas. El resto —los grados, los empleos, los reconocimientos— son solo consecuencias.' },
   ],
 };
+/* 10 niveles (20→200 ppm de 20 en 20): los textos se reutilizan — mismo texto, más velocidad */
+const _T=Object.assign({}, TEXTS);
+TEXTS.L1=_T.L1; TEXTS.L2=_T.L1; TEXTS.L3=_T.L2; TEXTS.L4=_T.L2;
+TEXTS.L5=_T.L3; TEXTS.L6=_T.L3; TEXTS.L7=_T.L4; TEXTS.L8=_T.L5;
+TEXTS.L9=_T.L6; TEXTS.L10=_T.L6;
 
 /* ===================== utilidades ===================== */
 const $=s=>document.querySelector(s);
@@ -1010,6 +1021,7 @@ function showResults(m){
   state.lastResult=Object.assign({},m,{goal});
   $('#modalWrap').classList.remove('hidden');
 }
+$('#btnCloseModal').onclick=()=>$('#modalWrap').classList.add('hidden');
 $('#btnRetry').onclick=()=>{
   $('#modalWrap').classList.add('hidden');
   clearMarks();
@@ -1177,7 +1189,7 @@ $('#btnTemplate').onclick=()=>{
     'Escribe o pega aquí el texto completo.',
     '',
     'Reglas rápidas:',
-    '1. La línea NIVEL es opcional (L1 a L6). Si falta, se usa el nivel elegido en la app.',
+    '1. La línea NIVEL es opcional (L1 a L10). Si falta, se usa el nivel elegido en la app.',
     '2. La línea TITULO es opcional. Si falta, se usa el nombre del archivo.',
     '3. Los textos de más de 500 palabras se dividen solos en partes de ~250.',
     '4. Guarda el archivo como .txt con codificación UTF-8.',
