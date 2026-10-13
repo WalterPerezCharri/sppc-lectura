@@ -1,65 +1,56 @@
-# SPPC · Entrenador de Lectura
+# SPPC · Entrenador de Lectura — v2.0
 
-Prototipo local del módulo de lectura del **Sistema Piramidal de Práctica Continua (SPPC)** — academia de entrenamiento académico, Perú (7 a 17 años).
+Sistema Piramidal de Práctica Continua para la academia **Proyecto Academia Cerro de Pasco**.
+Entrenador de fluidez lectora para estudiantes de **7 a 17 años**, con niveles L1–L6
+(metas de 20 a 200+ palabras por minuto).
 
-## Qué es
+## Qué hay de nuevo en v2.0
 
-Un único archivo HTML autocontenido (`index.html`) para entrenar y medir fluidez lectora:
-
-- **Biblioteca graduada**: textos en español por nivel (L1 a L6) con metas de velocidad según el plan SPPC (20 → 200+ palabras por minuto).
-- **Escuchar modelo**: lectura en voz alta con resaltado palabra por palabra (karaoke) en 3 modos: **Corrido**, **Palabra por palabra** y **Por sílabas** (gar·ban·zo) con pausa ajustable entre palabras. Funciona sin internet.
-- **Voces y géneros literarios**: selector de voz (instala voces naturales en Windows 11: Configuración → Accesibilidad → Narrador → «Agregar voces naturales»), control de **tono** y perfiles rápidos: *Aventura (voz grave)*, *Novela juvenil (femenina)*, *Cuento infantil (tono niño)*.
-- **Práctica guiada en eco** (modo por defecto): al pulsar «Comenzar lectura», la voz modelo lee con karaoke y el estudiante **repite en voz alta** siguiendo el ritmo — vista, oído y voz a la vez, sin interrupciones. El tutor escucha y **toca las palabras con error sin detener la lectura**; al final se muestran las palabras a reforzar. La progresión consiste en subir la velocidad poco a poco.
-- **Modos libres (solo diagnóstico)**: el estudiante lee sin modelo — con reconocimiento de voz del navegador (Chrome/Edge, requiere internet) o con marcado manual del tutor (offline).
-- **Progreso**: historial local por máquina, gráfico de evolución y exportación a CSV.
-- **Biblioteca externa**: carga cuentos y libros desde archivos **`.pdf`** o `.txt` (selección múltiple). Los libros largos se dividen en partes de ~250 palabras. Los textos cargados duran solo la sesión — la biblioteca viaja en tus archivos (USB, correo), no en la máquina. Botón **«❓ Instrucciones de carga»** con las reglas numeradas.
-- **Acceso rápido**: el programa recuerda los **últimos 10 archivos abiertos** y permite recargarlos con un clic (Chrome/Edge guardan un acceso autorizado al archivo; si el archivo se movió o borró, el acceso se retira solo de la lista).
-
-## Archivos PDF
-
-- Se extrae el texto de PDFs generados desde Word, Google Docs, LibreOffice, etc.
-- Los libros largos se dividen automáticamente en partes de práctica.
-- El título del texto será el nombre del archivo (consejo: `El perro fiel L3.pdf`).
-- **Excepción**: un PDF *escaneado* (fotos de páginas, sin texto seleccionable) no se puede leer — la app lo avisará. Para esos casos, conviértelos primero a texto (OCR).
-
-## Formato de archivos de texto (.txt)
-
-```text
-NIVEL: L2
-TITULO: El mercado del sábado
-
-Aquí va el cuento completo…
-```
-
-- `NIVEL:` puede ser L1 a L6 (si se omite, usa el nivel elegido en pantalla).
-- `TITULO:` es opcional (si se omite, usa el nombre del archivo).
-- Si el texto supera las 500 palabras, se divide automáticamente en partes de práctica.
-- Desde la app puedes descargar `plantilla_cuento_sppc.txt` como ejemplo.
+- **Interfaz tipo lector profesional** (estilo Adobe Acrobat / Sumatra): riel de
+  iconos a la izquierda, barra de herramientas superior, página centrada sobre
+  fondo gris y barra de estado.
+- **Lectura directa del PDF**: el PDF se abre y se lee *tal cual* en la ventana
+  principal (ya no se convierte a texto). La voz modelo resalta cada palabra
+  **sobre la página del PDF**, como la "lectura en voz alta" de Adobe Reader.
+- Navegación de páginas y zoom en la barra superior.
+- Diseño más sobrio y moderno, apropiado para 7–17 años.
 
 ## Uso
 
-1. Copia `index.html` a la tablet, laptop o PC.
-2. Ábrelo con doble clic (recomendado: Chrome o Edge).
-3. Escribe el nombre del estudiante, elige nivel y texto, y practica.
+1. Abre `index.html` en Chrome o Edge (doble clic, funciona sin internet).
+2. Pulsa el icono de carpeta (o **Abrir PDF o TXT**) y elige el archivo.
+3. Pulsa **▶ Leer**:
+   - En modo **Eco** (predeterminado) la voz modelo lee y resalta cada palabra
+     como karaoke; el estudiante repite en voz alta siguiendo el ritmo.
+   - El tutor **toca las palabras con error** sin detener la lectura.
+4. Al terminar, el veredicto indica si conviene subir la velocidad — esa es la
+   progresión, sin exámenes ni interrupciones.
+5. Modos de lectura del modelo: **Corrido**, **Palabra por palabra** o
+   **Por sílabas** (con escudo anti-siglas: na, ri, dia, SA se pronuncian bien).
+6. Modos de práctica (botón del micrófono): **Eco** → **Libre · auto**
+   (la app escucha y sigue el avance) → **Libre · manual** (el tutor marca).
 
-### Como aplicación de escritorio en Windows 11
+## Panel lateral (riel izquierdo)
 
-- Doble clic en **`Abrir SPPC Lectura.bat`**: se abre en modo aplicación (ventana propia, sin barra del navegador), usando Edge o Chrome. Funciona sin internet.
-- Opcional: clic derecho en **`Crear acceso directo.ps1`** → «Ejecutar con PowerShell» para tener el ícono **SPPC Lectura** en el Escritorio.
+- **Biblioteca**: nombre del estudiante, nivel SPPC (L1–L6), textos incluidos,
+  carga de archivos y **últimos 10 archivos abiertos** para reabrir con un toque.
+- **Voz y velocidad**: voces en español, presets (aventura / novela / infantil),
+  tono y pausa entre palabras.
+- **Progreso**: historial de sesiones con gráfico de ppm y exportación a CSV.
+- **Instrucciones**: reglas de carga de archivos en formato instructivo.
 
-Los datos se guardan en el propio dispositivo (`localStorage`). Exporta el CSV semanalmente para consolidar en la planilla central de la academia.
+## Reglas de carga
 
-## Publicar con GitHub Pages (opcional)
+1. Los PDF escaneados (imagen sin texto) no se aceptan.
+2. Los TXT con más de 500 palabras se dividen solos en partes de ~250.
+3. Los TXT pueden llevar encabezado `NIVEL: L1`…`L6` y `TITULO: …`.
+4. Guarda los TXT en codificación UTF-8.
 
-Con el repositorio en GitHub: **Settings → Pages → Deploy from branch → main → / (root)**. La app queda disponible en una URL gratuita, útil como respaldo de la copia local.
+## Archivos
 
-## Privacidad
+- `index.html` — la aplicación completa.
+- `pdf.min.js`, `pdf.worker.min.js` — motor PDF.js 3.11 (necesarios junto a index.html).
+- `Abrir SPPC Lectura.bat` — atajo de apertura en Windows.
+- `Crear acceso directo.ps1` — crea acceso directo en el escritorio.
 
-Sin servidores, sin cuentas, sin envío de datos. Todo ocurre en el dispositivo.
-
-## Roadmap
-
-- [ ] Más textos por nivel (objetivo: 20+)
-- [ ] Preguntas de comprensión al final de cada lectura
-- [ ] Módulo hermano de cálculo mental con corrección
-- [ ] Evaluación de voz infantil offline con Whisper local
+Todo funciona **sin internet**: la app y el motor PDF son locales.
