@@ -1,9 +1,37 @@
-# SPPC · Entrenador de Lectura — v2.3
+# SPPC · Entrenador de Lectura — v2.6
 
 Sistema Piramidal de Práctica Continua para la academia **Proyecto Academia Cerro de Pasco**.
 Entrenador de fluidez lectora para estudiantes de **7 a 17 años**, con niveles **L1–L10** (metas de 20 a 200 palabras por minuto, de 20 en 20).
 
-## Qué hay de nuevo en v2.3
+## Qué hay de nuevo en v2.6
+
+- **Regleta de meta de velocidad**: la parrilla de 15 casillas se reemplazó por una
+  regleta compacta de 20 a 300 ppm en el panel de Práctica. Moverla fija el nivel
+  (L1–L15) y lleva la velocidad de la barra a esa meta.
+- **Opciones de lectura en el panel de Práctica**: voz, tono, pausa extra y perfiles
+  (Aventura / Novela / Infantil) viven ahora en el mismo panel, estilo cuadro de
+  opciones de lectura en voz alta. La velocidad sigue en la barra superior.
+
+### v2.5
+
+- **Textos de muestra**: sección propia en el panel con 2 textos (niños y
+  adolescentes), listos para demos. Los archivos viven en la carpeta
+  `textos-muestra/` junto al programa; la app lee el archivo real y, si el
+  navegador bloquea la lectura local, usa una copia de respaldo — la muestra
+  siempre abre.
+- **Niveles hasta 300 ppm**: L11–L15 (220, 240, 260, 280, 300 ppm). El control
+  de velocidad llega a 300 ppm y esas velocidades son reales en cualquier PDF.
+
+### v2.4
+
+- **Velocidad en ppm reales**: el control ya no es un multiplicador "×" sino la meta
+  directa en palabras por minuto, de **20 a 300 ppm**, y vale igual para cualquier
+  documento: PDF abierto, TXT externo o cualquier nivel. A 160 ppm, lee a 160 ppm.
+- **Sin biblioteca interna**: se retiró la sección "Textos del nivel". La biblioteca
+  es tu carpeta de archivos: abres PDF/TXT y los **últimos 10 archivos** quedan
+  siempre visibles en el panel para reabrirlos con un clic.
+
+### v2.3
 
 - **Niveles sin edades**: las casillas ya no dicen "7–8 años" ni "14 años" — nadie
   se pone un freno solo. El nivel es solo una meta de velocidad: quien lee rápido,

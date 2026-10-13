@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SPPC · Entrenador de Lectura v2.3</title>
+<title>SPPC · Entrenador de Lectura v2.6</title>
 <script src="pdf.min.js"></script>
 <style>
   :root{
@@ -130,6 +130,12 @@
   .btn-ghost:disabled{opacity:.45;cursor:default}
   .toolbar-row{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
 
+  .regleta{background:#f7f8f9;border:1px solid var(--line);border-radius:4px;padding:10px 12px 8px;margin-bottom:4px}
+  .regleta input[type=range]{width:100%;accent-color:var(--accent)}
+  .reg-marks{display:flex;justify-content:space-between;font-size:.62rem;color:var(--muted);padding:0 2px;margin-top:-2px}
+  .reg-val{display:flex;align-items:baseline;justify-content:space-between;margin-top:6px}
+  .reg-val b{font-size:.95rem;color:var(--accent)}
+  .reg-val span{font-size:.72rem;color:var(--muted)}
   .lvl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
   .lvl{border:1px solid var(--line);border-radius:4px;padding:9px 6px;text-align:center;background:#fff;transition:all .15s}
   .lvl:hover{border-color:var(--accent)}
@@ -197,15 +203,12 @@
 
   <!-- ======== riel lateral ======== -->
   <nav id="rail">
-    <div class="rail-logo" title="SPPC · Entrenador de Lectura — PROTOTIPO 2.3">S</div>
-    <button class="rail-btn active" data-panel="library" title="Biblioteca de textos">
+    <div class="rail-logo" title="SPPC · Entrenador de Lectura — PROTOTIPO 2.6">S</div>
+    <button class="rail-btn active" data-panel="library" title="Estudiante, nivel y archivos">
       <svg viewBox="0 0 24 24"><path d="M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19a2 2 0 0 0 2 2h13"/><path d="M9 7h6M9 11h4"/></svg>
     </button>
     <button class="rail-btn" id="railOpen" title="Abrir archivo PDF o TXT">
       <svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-    </button>
-    <button class="rail-btn" data-panel="voice" title="Voz y velocidad">
-      <svg viewBox="0 0 24 24"><path d="M4 10v4M8 7v10M12 4v16M16 8v8M20 11v2"/></svg>
     </button>
     <button class="rail-btn" data-panel="progress" title="Progreso">
       <svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
@@ -249,8 +252,8 @@
       </div>
       <div class="tb-speed">
         Velocidad
-        <input type="range" id="rate" min="0.3" max="2.5" step="0.05" value="0.9">
-        <span id="speedVal">0.9×</span>
+        <input type="range" id="rate" min="20" max="300" step="5" value="60">
+        <span id="speedVal">60 ppm</span>
       </div>
       <div class="tb-sep"></div>
       <button class="tb-btn on" id="btnPractice" title="Modo práctica guiada en eco: el estudiante repite y el tutor marca errores">
@@ -266,9 +269,9 @@
           <div id="wordLayer"></div>
           <div class="textsheet welcome" id="welcomePage">
             <h1>Entrenador de Lectura SPPC</h1>
-            <div class="sub">Sistema Piramidal de Práctica Continua · Academia Cerro de Pasco · 7 a 17 años · PROTOTIPO 2.3</div>
+            <div class="sub">Sistema Piramidal de Práctica Continua · Academia Cerro de Pasco · 7 a 17 años · PROTOTIPO 2.6</div>
             <ol>
-              <li>Abre un <b>PDF o TXT</b> con el botón <b>Abrir archivo</b> (o un texto de la <b>Biblioteca</b>).</li>
+              <li>Abre un <b>PDF o TXT</b> con el botón <b>Abrir archivo</b> o prueba un <b>texto de muestra</b> del panel.</li>
               <li>Pulsa <b>▶ Leer</b>: la voz modelo lee y <b>resalta cada palabra</b> como karaoke.</li>
               <li>El estudiante <b>repite en voz alta</b> siguiendo el ritmo — vista, oído y voz a la vez.</li>
               <li>El tutor <b>toca las palabras con error</b> sin detener la lectura.</li>
@@ -285,7 +288,7 @@
     </div>
 
     <footer id="statusbar">
-      <span id="status">Listo. Abre un archivo o elige un texto de la biblioteca.</span>
+      <span id="status">Listo. Abre un archivo PDF o TXT para empezar.</span>
       <span id="studentLbl"></span>
       <span id="timer">0:00</span>
     </footer>
@@ -303,36 +306,34 @@
       <div id="pnl-library" class="pnl">
         <div class="fld-label">Estudiante</div>
         <input class="txtin" id="studentName" placeholder="Nombre del estudiante…" autocomplete="off">
-        <div class="fld-label">Nivel SPPC</div>
-        <div class="lvl-grid" id="lvlGrid"></div>
-        <div class="fld-label">Textos del nivel</div>
-        <div id="textList"></div>
+        <div class="fld-label">Nivel SPPC — meta de velocidad</div>
+        <div class="regleta">
+          <input type="range" id="lvlRange" min="20" max="300" step="20" value="20">
+          <div class="reg-marks"><span>20</span><span>100</span><span>200</span><span>300</span></div>
+          <div class="reg-val"><b id="lvlLabel">L1 · 20 ppm</b><span id="lvlDesc">Sílabas y oraciones simples</span></div>
+        </div>
+        <div class="fld-label">Opciones de lectura</div>
+        <select class="vselect" id="voiceSel"></select>
+        <div class="slider-row">Tono <input type="range" id="pitch" min="0.5" max="1.8" step="0.05" value="1"><b id="pitchVal">1.00</b></div>
+        <div class="slider-row">Pausa extra <input type="range" id="pause" min="200" max="1200" step="50" value="600"><b id="pauseVal">0.6 s</b></div>
+        <div class="preset-grid">
+          <button class="preset" id="vp_aventura"><b>Aventura</b><span>Grave, pausada</span></button>
+          <button class="preset" id="vp_novela"><b>Novela</b><span>Media, natural</span></button>
+          <button class="preset" id="vp_infantil"><b>Infantil</b><span>Aguda, lenta</span></button>
+        </div>
+        <div class="hint2">Windows 11: Configuración → Accesibilidad → Narrador → «Agregar voces naturales». Reinicia el navegador tras instalar.</div>
+        <div class="fld-label">Textos muestra</div>
+        <div id="sampleList"></div>
         <div class="fld-label">Archivos externos</div>
         <div class="toolbar-row">
           <button class="btn btn-primary" id="btnLoadFile">Abrir PDF o TXT…</button>
           <button class="btn btn-ghost" id="btnTemplate">Plantilla .txt</button>
         </div>
-        <div id="recentWrap" class="hidden">
+        <div id="recentWrap">
           <div class="fld-label">Últimos archivos abiertos</div>
           <div class="toolbar-row" id="recentList"></div>
         </div>
         <div class="statusline" id="loadStatus"></div>
-      </div>
-
-      <!-- VOZ -->
-      <div id="pnl-voice" class="pnl hidden">
-        <div class="fld-label">Voz del sistema</div>
-        <select class="vselect" id="voiceSel"></select>
-        <div class="hint2" style="margin-top:6px">Windows 11: Configuración → Accesibilidad → Narrador → «Agregar voces naturales» (hay voces de Perú, México y España). Reinicia el navegador tras instalar.</div>
-        <div class="fld-label">Perfiles por género literario</div>
-        <div class="preset-grid">
-          <button class="preset" id="vp_aventura"><b>Aventura · voz grave</b><span>Narrador masculino, pausado</span></button>
-          <button class="preset" id="vp_novela"><b>Novela juvenil · femenina</b><span>Tono medio, ritmo natural</span></button>
-          <button class="preset" id="vp_infantil"><b>Cuento infantil · voz de niño</b><span>Tono agudo, pausas largas</span></button>
-        </div>
-        <div class="fld-label">Ajuste fino</div>
-        <div class="slider-row">Tono <input type="range" id="pitch" min="0.5" max="1.8" step="0.05" value="1"><b id="pitchVal">1.00</b></div>
-        <div class="slider-row">Pausa entre palabras <input type="range" id="pause" min="200" max="1200" step="50" value="600"><b id="pauseVal">0.6 s</b></div>
       </div>
 
       <!-- PROGRESO -->
@@ -353,7 +354,7 @@
           <li><b>Formatos aceptados:</b> <b>.pdf</b> y <b>.txt</b>. Puedes elegir varios a la vez.</li>
           <li><b>Los PDF escaneados no se aceptan:</b> si el PDF es una foto de páginas (no puedes seleccionar su texto con el mouse), el sistema no puede leerlo en voz alta. Conviértelo con OCR.</li>
           <li><b>El PDF se abre directamente:</b> se muestra como en Adobe Reader y la lectura en voz alta resalta cada palabra sobre la página.</li>
-          <li><b>Archivos .txt:</b> con <b>NIVEL: L1…L6</b> y <b>TITULO:</b> en las primeras líneas se clasifican solos (usa la plantilla). Los libros .txt largos se dividen en partes de práctica.</li>
+          <li><b>Archivos .txt:</b> con <b>NIVEL: L1…L15</b> y <b>TITULO:</b> en las primeras líneas se clasifican solos (usa la plantilla). Los libros .txt largos se dividen en partes de práctica.</li>
           <li><b>Archivos .pdf:</b> el título será el nombre del archivo. Nómbralo con el cuento y su nivel, ej. <i>El zorro de Cerro de Pasco L3.pdf</i>.</li>
           <li><b>Nada se copia a la máquina:</b> solo se recuerda el <b>acceso</b> a los últimos 10 archivos para reabrirlos con un clic. Si mueves o borras el archivo, su acceso deja de funcionar.</li>
         </ol>
@@ -405,38 +406,12 @@ const LEVELS=[
   { id:'L8',   goal:160, goalTxt:'160 ppm', desc:'Lectura de libros' },
   { id:'L9',   goal:180, goalTxt:'180 ppm', desc:'Ensayo y prensa' },
   { id:'L10',   goal:200, goalTxt:'200 ppm', desc:'Síntesis crítica' },
+  { id:'L11',   goal:220, goalTxt:'220 ppm', desc:'Lectura veloz' },
+  { id:'L12',   goal:240, goalTxt:'240 ppm', desc:'Lectura veloz' },
+  { id:'L13',   goal:260, goalTxt:'260 ppm', desc:'Velocidad experta' },
+  { id:'L14',   goal:280, goalTxt:'280 ppm', desc:'Velocidad experta' },
+  { id:'L15',   goal:300, goalTxt:'300 ppm', desc:'Velocidad máxima' },
 ];
-const TEXTS={
-  L1:[
-    { title:'El gato y el sol', body:'El gato toma el sol en el patio. La luna sale de noche. Mi mamá me da una sopa rica. El perro ladra al gato y el gato salta al techo. Yo leo con mi papá cada día. La casa es linda y mi mesa es de pino.' },
-    { title:'Mi familia', body:'Mi papá se llama Luis. Mi mamá se llama Rosa. Mi hermana Ana tiene una muñeca. Mi hermano Pepe juega con la pelota. Los domingos comemos juntos en casa de la abuela. Ella hace arroz con pollo y nos cuenta cuentos.' },
-  ],
-  L2:[
-    { title:'El mercado del sábado', body:'Los sábados voy al mercado con mi abuela. Ella compra papas, tomates y frutas dulces. El señor del puesto nos regala una mandarina. El mercado está lleno de colores y voces. Una señora vende flores amarillas y otra vende pan caliente. Mi abuela conversa con todos y yo la ayudo a cargar la bolsa. Al volver a casa, tomamos mate de coca y descansamos.' },
-    { title:'El tren a Huancayo', body:'El tren sale temprano de la estación. Por la ventana veo montañas altas y ríos de agua fría. Un señor vende choclo con queso en el pasillo. Mi hermano duerme en el asiento y yo cuento los túneles. Son once túneles oscuros. Cuando llegamos, nos espera el tío Miguel con su camioneta roja. Huancayo nos recibe con sol y con música de la calle.' },
-  ],
-  L3:[
-    { title:'La vicuña del valle', body:'En lo alto del valle vivía una vicuña llamada Estrella. Cada mañana bajaba al río a beber agua fría. Un día conoció a Tomás, un niño que cuidaba ovejas cerca del puente de piedra. "¿Por qué tus pestañas son tan largas?" preguntó Tomás. La vicuña respondió: "Para protegerme del viento de la montaña". Desde entonces fueron amigos. Tomás le llevaba pasto fresco y Estrella lo acompañaba hasta la escuela. Los pobladores decían que nunca habían visto una amistad tan bonita entre un animal silvestre y un niño.' },
-    { title:'El zorro de Cerro de Pasco', body:'En las frías mañanas de la sierra peruana, un pequeño zorro caminaba entre las pajas de ichu. "Mamá, ¿por qué brilla el sol sobre la montaña?", preguntó el zorrito. La señora condoriña sonrió y dijo: "¡Porque hoy es un día especial!". El niño Julián y su hermana Lucía observaban desde la ventana. "Qué hermoso animal", murmuró ella con emoción. El abuelo Aurelio explicó que los zorros de la zona son listos y nobles, y que hay que cuidarlos porque son parte de la puna. Esa tarde, los niños dejaron un plato con agua limpia junto a la puerta.' },
-  ],
-  L4:[
-    { title:'La biblioteca de don Elías', body:'Don Elías tenía la casa más visitada del barrio: una biblioteca con mil libros ordenados por colores. Los lunes llegaban los niños de la escuela; los miércoles, las señoras del club de lectura; y los viernes, los jóvenes que preparaban sus exámenes. Él prestaba los libros con una sola regla: debían regresar con una hoja donde el lector escribiera lo que aprendió. Con los años, esas hojas llenaron trece cuadernos gruesos. Cuando don Elías cumplió ochenta años, el barrio entero le regaló una placa en la puerta que decía: "Aquí vive el que nos enseñó a leer". Él sonrió y dijo que los libros no enseñan solos: enseñan porque alguien los abre con ganas.' },
-    { title:'Cumbre de los Andes', body:'La expedición partió antes del amanecer. El aire era tan delgado que cada paso exigía una respiración completa. Mariana, la guía, conocía la montaña como si fuera la palma de su mano: sabía dónde el hielo sonaba hueco, dónde el viento golpeaba sin aviso y dónde el cóndor hacía su nido. A medida que subían, el silencio se volvió más denso, como si la montaña escuchara. Al llegar a la cumbre, nadie habló por un minuto entero. Abajo, el valle parecía un mapa doblado. Mariana pensó que las montañas no se conquistan: se visitan con respeto, se aprende de ellas y se regresa contando la verdad de lo visto.' },
-  ],
-  L5:[
-    { title:'Editorial: la lectura en la escuela', body:'Leer no es una materia más: es la herramienta que abre todas las demás. Un estudiante que lee con fluidez aprende historia sin depender de la memoria, entiende matemáticas porque comprende los enunciados y discute con argumentos porque ha visto ideas distintas a las suyas. Sin embargo, la lectura no se fortalece con discursos, sino con práctica constante y medible. Diez minutos diarios de lectura en voz alta, con metas claras de velocidad y precisión, producen mejores resultados que horas de tareas mecánicas. La pregunta que debe hacerse cada escuela no es si los alumnos leen, sino cuánto mejoran cada semana y quién acompaña ese progreso con datos.' },
-    { title:'El agua que viene de los andes', body:'Cada gota que bebe la ciudad comenzó como niebla atrapada en las pajas de ichu o como hielo milenario en la cordillera. Los pobladores de la sierra lo saben desde hace siglos: por eso construyeron canales que siguen usando la gravedad y sembraron árboles en las laderas para que el agua no se escape de la tierra. Hoy los ingenieros hablan de infraestructura verde, pero la idea es antigua: cuidar la montaña es cuidar el grifo. Cuando un glaciar retrocede, no solo cambia el paisaje; cambia el calendario de siembra, el precio de la comida y la vida de millones de personas que viven río abajo. El agua, al final, es una sola historia que empieza en las nubes y termina en nuestra mesa.' },
-  ],
-  L6:[
-    { title:'La memoria y la máquina', body:'La humanidad siempre delegó su memoria en objetos: primero en quipus de nudos de colores, después en tablillas de arcilla, luego en libros impresos y hoy en centros de datos que nadie visita. Cada salto trajo abundancia y una duda sutil: si la máquina recuerda por nosotros, ¿seguimos recordando? La respuesta no está en rechazar la tecnología, sino en entender que la memoria humana no es un almacén, es un ejercicio. Recordar es reconstruir, y esa reconstrucción fortalece el juicio. Un estudiante que memoriza fechas sin contexto las olvida; uno que las conecta con causas y consecuencias las convierte en criterio. La máquina guarda datos; la persona educada guarda sentido. Confundir ambas cosas sería el verdadero olvido.' },
-    { title:'Carta a un joven que estudia', body:'Te escribo porque me preguntaste si vale la pena esforzarse. Mira: nadie recuerda al atleta que entrenó solo cuando ganaba, sino al que entrenó también los días malos. El estudio es igual. No se trata de talento, esa palabra que usamos para no mirar el esfuerzo ajeno; se trata de método: practicar un poco cada día, medir el avance sin mentirse y corregir enseguida. La lectura veloz que hoy te cuesta será mañana tu ventaja silenciosa: entenderás antes, decidirás mejor y nadie podrá engañarte con facilidad. Cuando dudes, recuerda la escalera: no importa el peldaño en el que estás, importa que no te detengas. El resto —los grados, los empleos, los reconocimientos— son solo consecuencias.' },
-  ],
-};
-/* 10 niveles (20→200 ppm de 20 en 20): los textos se reutilizan — mismo texto, más velocidad */
-const _T=Object.assign({}, TEXTS);
-TEXTS.L1=_T.L1; TEXTS.L2=_T.L1; TEXTS.L3=_T.L2; TEXTS.L4=_T.L2;
-TEXTS.L5=_T.L3; TEXTS.L6=_T.L3; TEXTS.L7=_T.L4; TEXTS.L8=_T.L5;
-TEXTS.L9=_T.L6; TEXTS.L10=_T.L6;
 
 /* ===================== utilidades ===================== */
 const $=s=>document.querySelector(s);
@@ -464,7 +439,7 @@ let seqToken=0;
 const seqDead=t=>t!==seqToken;
 
 /* ===================== paneles laterales ===================== */
-const PANEL_TITLES={library:'Biblioteca',voice:'Voz y velocidad',progress:'Progreso',help:'Instrucciones'};
+const PANEL_TITLES={library:'Práctica',progress:'Progreso',help:'Instrucciones'};
 let openPanel='library';
 function showPanel(name){
   openPanel = openPanel===name ? null : name;
@@ -480,20 +455,52 @@ function showPanel(name){
 document.querySelectorAll('.rail-btn[data-panel]').forEach(b=>b.addEventListener('click',()=>showPanel(b.dataset.panel)));
 $('#panelClose').addEventListener('click',()=>showPanel(openPanel));
 
-/* ===================== biblioteca ===================== */
-function renderLevels(){
-  $('#lvlGrid').innerHTML=LEVELS.map(l=>
-    `<button class="lvl ${l.id===state.level.id?'on':''}" data-l="${l.id}"><b>${l.id} · ${l.goalTxt}</b><span>${l.desc}</span></button>`).join('');
-  document.querySelectorAll('#lvlGrid .lvl').forEach(b=>b.addEventListener('click',()=>{
-    state.level=LEVELS.find(l=>l.id===b.dataset.l); renderLevels();
-  }));
-  const list=TEXTS[state.level.id];
-  $('#textList').innerHTML=list.map((t,i)=>{
+/* ===================== niveles ===================== */
+/* ---- Textos de muestra: viven en la carpeta textos-muestra/ junto al programa.
+   La app intenta leer el archivo real; si el navegador bloquea la lectura local
+   (modo file://), usa la copia de respaldo embebida. Así la muestra siempre abre. ---- */
+const SAMPLE_FILES=[
+  { file:'textos-muestra/Muestra niños — El perrito de la colina.txt', tag:'Niños',
+    title:'El perrito de la colina', levelId:'L2',
+    body:'Rocky es un perrito café que vive en la colina. Cada mañana baja corriendo al portón de la escuela. Los niños lo saludan y le dan pan. Rocky mueve la cola y ladra dos veces. Un día de lluvia, Rocky no llegó. Todos salieron a buscarlo con sus ponchos. Lo encontraron bajo un puente, cuidando a tres gatitos mojados. Desde ese día, Rocky es el héroe del barrio y los gatitos viven en la escuela.' },
+  { file:'textos-muestra/Muestra adolescentes — La mina y el futuro.txt', tag:'Adolescentes',
+    title:'La mina y el futuro', levelId:'L8',
+    body:'Cerro de Pasco creció al ritmo de la mina: primero la plata colonial, después el cobre y el zinc del siglo veinte. Durante generaciones, las familias organizaron sus horarios según los turnos de trabajo y la ciudad aprendió a vivir de lo que la montaña entregaba. Pero ningún mineral dura para siempre. Los jóvenes de hoy enfrentan una pregunta que sus abuelos no necesitaron hacerse: ¿qué será la ciudad cuando la veta se agote? La respuesta no está en abandonar la historia, sino en sumarle oficios nuevos: tecnología, turismo de altura, educación y servicios. Quien entiende su pasado puede imaginar su futuro; quien solo lo repite, se queda esperando. La montaña enseñó algo valioso: el verdadero recurso no está bajo la tierra, sino en la capacidad de su gente para reinventarse.' },
+];
+function renderSamples(){
+  $('#sampleList').innerHTML=SAMPLE_FILES.map((t,i)=>{
     const n=t.body.split(/\s+/).filter(Boolean).length;
-    return `<button class="txtl" data-i="${i}"><span class="n">${i+1}</span><span><span class="t">${t.title}${t.ext?'<span class="ext">archivo</span>':''}</span><span class="m">${n} palabras · meta ${state.level.goalTxt}</span></span></button>`;
+    return `<button class="txtl" data-s="${i}"><span class="n">${t.tag[0]}</span><span><span class="t">${t.title}</span><span class="m">${t.tag} · ${n} palabras</span></span></button>`;
   }).join('');
-  document.querySelectorAll('#textList .txtl').forEach(b=>b.addEventListener('click',()=>openLibraryText(+b.dataset.i)));
+  document.querySelectorAll('#sampleList .txtl').forEach(b=>b.addEventListener('click',()=>openSample(+b.dataset.s)));
 }
+async function openSample(i){
+  const sm=SAMPLE_FILES[i];
+  const lv=LEVELS.find(l=>l.id===sm.levelId)||state.level;
+  state.level=lv; renderLevels();
+  try{
+    const r=await fetch(sm.file);           // funciona en GitHub Pages / servidor
+    if(!r.ok) throw 0;
+    const p=parseExtFile(sm.file, await r.text());
+    openTextDoc(p.title||sm.title, p.body||sm.body, (p.level||lv).id);
+  }catch(e){
+    openTextDoc(sm.title, sm.body, lv.id);  // respaldo embebido (modo file://)
+  }
+  showPanel(null);
+}
+function renderLevels(){
+  const l=state.level;
+  $('#lvlRange').value=l.goal;
+  $('#lvlLabel').textContent=l.id+' · '+l.goalTxt;
+  $('#lvlDesc').textContent=l.desc;
+}
+/* la regleta fija la meta (nivel) y lleva la velocidad a esa meta */
+$('#lvlRange').addEventListener('input',e=>{
+  const goal=+e.target.value;
+  const l=LEVELS.find(x=>x.goal===goal); if(!l) return;
+  state.level=l; renderLevels();
+  $('#rate').value=goal; $('#speedVal').textContent=goal+' ppm';
+});
 $('#studentName').addEventListener('input',e=>{
   $('#studentLbl').textContent=e.value.trim()?`Estudiante: ${e.value.trim()}`:'';
 });
@@ -515,11 +522,11 @@ function pickVoice(){
   return v||null;
 }
 $('#voiceSel')?.addEventListener('change',e=>localStorage.setItem('sppc_voice',e.target.value));
-const PRESETS={ aventura:{pitch:.75,rate:.85,pause:700}, novela:{pitch:1.05,rate:1.0,pause:500}, infantil:{pitch:1.5,rate:.8,pause:800} };
+const PRESETS={ aventura:{pitch:.75,ppm:55,pause:700}, novela:{pitch:1.05,ppm:90,pause:500}, infantil:{pitch:1.5,ppm:40,pause:800} };
 for(const [id,cfg] of Object.entries(PRESETS)){
   $('#vp_'+id).addEventListener('click',()=>{
     voicePitch=cfg.pitch; $('#pitch').value=cfg.pitch; $('#pitchVal').textContent=cfg.pitch.toFixed(2);
-    $('#rate').value=cfg.rate; $('#speedVal').textContent=cfg.rate.toFixed(2)+'×';
+    $('#rate').value=cfg.ppm; $('#speedVal').textContent=cfg.ppm+' ppm';
     $('#pause').value=cfg.pause; $('#pauseVal').textContent=(cfg.pause/1000).toFixed(1)+' s';
     document.querySelectorAll('.preset').forEach(p=>p.classList.remove('on'));
     $('#vp_'+id).classList.add('on');
@@ -527,7 +534,7 @@ for(const [id,cfg] of Object.entries(PRESETS)){
 }
 $('#pitch').addEventListener('input',e=>{ voicePitch=+e.target.value; $('#pitchVal').textContent=voicePitch.toFixed(2); });
 $('#pause').addEventListener('input',e=>{ $('#pauseVal').textContent=(+e.target.value/1000).toFixed(1)+' s'; });
-$('#rate').addEventListener('input',e=>{ $('#speedVal').textContent=(+e.target.value).toFixed(2)+'×'; });
+$('#rate').addEventListener('input',e=>{ $('#speedVal').textContent=e.target.value+' ppm'; });
 
 /* ---------- silabeador de español ---------- */
 function syllabify(word){
@@ -644,12 +651,6 @@ function openTextDoc(title, body, levelId){
   setStatus('Texto listo. Pulsa ▶ Leer para escuchar el modelo.');
 }
 
-function openLibraryText(idx){
-  const t=TEXTS[state.level.id][idx];
-  state.textIdx=idx;
-  openTextDoc(t.title, t.body, state.level.id);
-  showPanel(null);
-}
 
 /* ---- PDF: render directo + capa de palabras (estilo lectura en voz alta) ---- */
 async function openPdfDoc(buf, title, levelId){
@@ -770,10 +771,17 @@ $('#page').addEventListener('click', e=>{
 /* ============ REPRODUCCIÓN: voz modelo + karaoke ============ */
 function setStatus(m){ $('#status').textContent=m; }
 function wordPause(){ return +$('#pause').value; }
-/* pausa efectiva: la pausa base se divide entre la velocidad, así subir
-   la velocidad acelera de verdad cualquier documento (PDF o biblioteca) */
-function effPause(){ return wordPause()/curRate(); }
-function curRate(){ return +$('#rate').value; }
+/* pausa efectiva: la que falta para cumplir las ppm pedidas.
+   A rate 1.0 la voz dice ~150 ppm (400 ms/palabra); el resto del tiempo
+   lo rellena la pausa. Vale igual para PDF abierto o texto externo. */
+function effPause(){
+  const ppm=targetPpm(), speechMs=400/curRate();
+  const extra=Math.max(0,(+$('#pause').value)-600); // pausa extra del panel de voz
+  return Math.max(0, 60000/ppm - speechMs) + extra;
+}
+/* velocidad en palabras por minuto: misma meta para cualquier documento */
+function targetPpm(){ return +$('#rate').value; }
+function curRate(){ return Math.min(2.6, Math.max(0.45, targetPpm()/135)); }
 function fmt(s){ s=Math.max(0,Math.floor(s)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
 function startTimer(){ state.t0=Date.now(); stopTimer(); state.timerInt=setInterval(()=>{ $('#timer').textContent=fmt((Date.now()-state.t0)/1000); },500); }
 function stopTimer(){ if(state.timerInt){ clearInterval(state.timerInt); state.timerInt=null; } }
@@ -860,7 +868,7 @@ function speakCorrido(my){
     u.onerror=()=>{ if(listenFallback){ clearInterval(listenFallback); listenFallback=null; } res(); };
     speechSynthesis.speak(u);
     /* algunas voces no emiten onboundary: avance estimado como respaldo */
-    const msPerWord=Math.max(180, 60000/(170*curRate()));
+    const msPerWord=Math.max(120, 60000/targetPpm());
     let wi=0;
     listenFallback=setInterval(()=>{
       if(gotBoundary || seqDead(my)){ clearInterval(listenFallback); listenFallback=null; return; }
@@ -1148,8 +1156,6 @@ async function processOneFile(f){
   const {title, body, level}=parseExtFile(f.name, text);
   const lv=level||state.level;
   const parts=splitLongText(title, body, lv);
-  TEXTS[lv.id]=TEXTS[lv.id]||[];
-  parts.forEach(p=>TEXTS[lv.id].push({title:p.title, body:p.body, ext:true}));
   state.level=lv;
   renderLevels();
   openTextDoc(parts[0].title, parts[0].body, lv.id);
@@ -1206,7 +1212,7 @@ $('#btnTemplate').onclick=()=>{
     'Escribe o pega aquí el texto completo.',
     '',
     'Reglas rápidas:',
-    '1. La línea NIVEL es opcional (L1 a L10). Si falta, se usa el nivel elegido en la app.',
+    '1. La línea NIVEL es opcional (L1 a L15). Si falta, se usa el nivel elegido en la app.',
     '2. La línea TITULO es opcional. Si falta, se usa el nombre del archivo.',
     '3. Los textos de más de 500 palabras se dividen solos en partes de ~250.',
     '4. Guarda el archivo como .txt con codificación UTF-8.',
@@ -1260,8 +1266,7 @@ async function renderRecentFiles(){
   try{ recs=await withTimeout(idbAll(),2000); }catch(e){ recs=[]; }
   recs.sort((a,b)=>(b.ts||0)-(a.ts||0));
   const names=recs.length? recs.map(r=>r.name) : recentNames();
-  if(!names.length){ wrap.classList.add('hidden'); return; }
-  wrap.classList.remove('hidden');
+  if(!names.length){ list.innerHTML='<div class="muted">Aún no abres archivos. Los últimos 10 aparecerán aquí.</div>'; return; }
   list.innerHTML='';
   names.slice(0,10).forEach(name=>{
     const b=document.createElement('button');
@@ -1295,6 +1300,7 @@ async function openRecent(name){
 loadVoices();
 speechSynthesis.onvoiceschanged=loadVoices;
 renderLevels();
+renderSamples();
 renderRecentFiles();
 // abre el panel de biblioteca al iniciar
 $('#panel').classList.remove('closed');
