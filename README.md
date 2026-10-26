@@ -1,9 +1,25 @@
-# SPPC · Entrenador de Lectura — v2.8
+# SPPC · Entrenador de Lectura — v2.9
 
 Sistema Piramidal de Práctica Continua para la academia **Proyecto Academia Cerro de Pasco**.
-Entrenador de fluidez lectora para estudiantes de **7 a 17 años**, con niveles **L1–L10** (metas de 20 a 200 palabras por minuto, de 20 en 20).
+Entrenador de fluidez lectora para estudiantes de **7 a 17 años**, con niveles **L1–L15** (metas de 20 a 300 palabras por minuto, de 20 en 20).
 
-## Qué hay de nuevo en v2.8 (calibración de lectura)
+## Qué hay de nuevo en v2.9 (pronunciación natural y diptongos)
+
+- **Las sílabas se leen como palabras naturales**: la voz ya no deletrea
+  ("da" antes sonaba "de a", "llu" sonaba "elle u", "ña" sonaba "na").
+  Cada sílaba se envía tal cual a la voz, con normalización de tildes y eñes;
+  solo unas pocas sílabas ambiguas (na, sa, ri, cia, au) llevan tilde de apoyo
+  para que la voz no las confunda con otra palabra.
+- **Diptongos separados en modo sílabas**: la división es hiato puro — cada
+  vocal es su propia sílaba: `di·a`, `pu·en·te`, `llu·vi·a`, `ma·ña·na`.
+  El niño se acomoda sílaba por sílaba, como marca el método.
+- **Corrido fluido**: bloques seguidos de ~8 palabras sin frenones en cada
+  punto o coma; la pausa de la puntuación es la micro-pausa natural de la voz
+  y el reloj de ppm reparte el tiempo parejo entre bloques.
+- Verificado: corrido 20 ppm → 20 reales, corrido 120 → 120, palabra 60 → 60,
+  sílabas 20 → 20.
+
+### v2.8 (calibración de lectura)
 
 - **Modelo de calibración oficial**: el presupuesto de cada palabra
   (60000/ppm milisegundos) incluye la voz y las pausas. Las ppm son

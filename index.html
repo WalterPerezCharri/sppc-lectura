@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SPPC · Entrenador de Lectura v2.8</title>
+<title>SPPC · Entrenador de Lectura v2.9</title>
 <script src="pdf.min.js"></script>
 <style>
   :root{
@@ -203,7 +203,7 @@
 
   <!-- ======== riel lateral ======== -->
   <nav id="rail">
-    <div class="rail-logo" title="SPPC · Entrenador de Lectura — PROTOTIPO 2.8">S</div>
+    <div class="rail-logo" title="SPPC · Entrenador de Lectura — PROTOTIPO 2.9">S</div>
     <button class="rail-btn active" data-panel="library" title="Estudiante, nivel y archivos">
       <svg viewBox="0 0 24 24"><path d="M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19a2 2 0 0 0 2 2h13"/><path d="M9 7h6M9 11h4"/></svg>
     </button>
@@ -269,7 +269,7 @@
           <div id="wordLayer"></div>
           <div class="textsheet welcome" id="welcomePage">
             <h1>Entrenador de Lectura SPPC</h1>
-            <div class="sub">Sistema Piramidal de Práctica Continua · Academia Cerro de Pasco · 7 a 17 años · PROTOTIPO 2.8</div>
+            <div class="sub">Sistema Piramidal de Práctica Continua · Academia Cerro de Pasco · 7 a 17 años · PROTOTIPO 2.9</div>
             <ol>
               <li>Abre un <b>PDF o TXT</b> con el botón <b>Abrir archivo</b> o prueba un <b>texto de muestra</b> del panel.</li>
               <li>Pulsa <b>▶ Leer</b>: la voz modelo lee y <b>resalta cada palabra</b> como karaoke.</li>
@@ -542,17 +542,14 @@ $('#rate').addEventListener('input',e=>{ $('#speedVal').textContent=e.target.val
 /* ---------- silabeador de español ---------- */
 function syllabify(word){
   const clean=word.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-zñü]/g,'');
-  if(clean.length<=3) return [clean||word.toLowerCase()];
-  const isV=c=>'aeiouü'.includes(c), isS=c=>'aeo'.includes(c);
+  if(clean.length<=3 && !/[aeiou]{2}/.test(clean)) return [clean||word.toLowerCase()];
+  const isV=c=>'aeiouü'.includes(c);
+  /* Cada vocal es su propio núcleo: sin diptongos. Pedagogía sílaba por
+     sílaba — el niño se acomoda al golpe de voz: dia→di·a, puen→pu·en. */
   const nuc=[]; let i=0;
   while(i<clean.length){
     if(!isV(clean[i])){ i++; continue; }
-    let j=i;
-    while(j+1<clean.length && isV(clean[j+1])){
-      if(isS(clean[j]) && isS(clean[j+1])) break;
-      j++;
-    }
-    nuc.push([i,j]); i=j+1;
+    nuc.push([i,i]); i++;
   }
   if(nuc.length<=1) return [clean];
   const ins=['pr','br','tr','dr','cr','gr','fr','pl','bl','cl','gl','fl','tl','rr','ll','ch'];
@@ -577,12 +574,16 @@ function speakText(w){
   if(/^y$/i.test(w.trim())) return 'i';
   return w;
 }
-/* Escudo universal: toda sílaba hablada se acentúa en su vocal tónica.
-   Suena idéntico (la sílaba aislada ya es tónica) pero el texto deja de
-   coincidir con siglas/símbolos del diccionario TTS (Na→sodio, SA, RI, DIA…). */
+/* Escudo selectivo: acentuar TODAS las sílabas confunde a algunas voces
+   (dá→"de a", llú→"elle u", ñá→"na"). Solo se acentúan las sílabas que
+   coinciden con siglas/símbolos que el motor lee mal (na→sodio, sa→ese-a,
+   ri→erre-i, cia, au→oro…). El resto se habla natural: da, ña, llu, dra. */
+const TTS_COLLIDE=new Set(['na','sa','ri','cia','au']);
 function fixSyllableSpeech(s){
-  const t=s.trim();
+  const t=s.normalize('NFC').trim();   // NFC: ñ pegado (n+~ suelto sonaba "na")
+  if(/^y$/i.test(t)) return 'i';
   if(t.length<2 || /[áéíóú]/.test(t) || /y$/.test(t)) return t;
+  if(!TTS_COLLIDE.has(t.toLowerCase())) return t;
   const masked=t.replace(/(?<=[qg])u(?=[ei])/g,'\u0001');
   const vm=[...masked.matchAll(/[aeiou]/g)];
   if(!vm.length) return t;
@@ -895,11 +896,13 @@ function speakChunk(words, firstFi, my){
 }
 async function speakCorrido(my){
   const d=state.doc; if(!d) return;
-  /* agrupar en frases (punto, coma, dos puntos…) de máx. 12 palabras */
+  /* bloques fluidos de ~8 palabras: las pausas del reloj se reparten
+     parejas entre bloques y las comas/puntos solo reciben la micro-pausa
+     natural de la voz — nada de frenones largos en cada punto final */
   const chunks=[]; let cur=[];
   state.flat.forEach((o,i)=>{
     cur.push(i);
-    if(/[.!?…,;:]["»)]?$/.test(o.w) || cur.length>=12){ chunks.push(cur); cur=[]; }
+    if(cur.length>=8){ chunks.push(cur); cur=[]; }
   });
   if(cur.length) chunks.push(cur);
   const t0=Date.now();
