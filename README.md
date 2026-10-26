@@ -1,9 +1,32 @@
-# SPPC · Entrenador de Lectura — v2.9
+# SPPC · Entrenador de Lectura — v2.9.1
 
 Sistema Piramidal de Práctica Continua para la academia **Proyecto Academia Cerro de Pasco**.
 Entrenador de fluidez lectora para estudiantes de **7 a 17 años**, con niveles **L1–L15** (metas de 20 a 300 palabras por minuto, de 20 en 20).
 
-## Qué hay de nuevo en v2.9 (pronunciación natural y diptongos)
+## Qué hay de nuevo en v2.9.1 (pronunciación corregida y corrido sin cortes)
+
+- **Las sílabas vuelven a sonar naturales**: la regla ahora es tilde de apoyo
+  en TODAS las sílabas **excepto** las pocas que se rompen con tilde
+  (`da`, `llu`, `ña` y demás con ñ van planas; vocales sueltas a/e/o planas).
+  Así `ca` ya no suena "ce a", `lle` ya no suena "ele ele e", `bá/jó/gá/có/drá`
+  suenan como sílabas reales, y `da/llu/ña` siguen correctas.
+- **"que/qui/gue/gui" son una sola sílaba**: la u es muda ahí, no es diptongo.
+  La división en hiato (di·a, pu·en·te, llu·vi·a) se mantiene para todo lo demás.
+- **ñ protegida**: un detalle técnico (normalización) convertía `niño` en
+  "ni·no"; ahora la ñ se conserva siempre.
+- **Corrido sin frenones a media oración**: los bloques de lectura ahora cortan
+  justo en la puntuación (punto, coma si la frase es larga), así la pausa cae
+  donde debe. La voz absorbe todo el presupuesto de tiempo — habla natural y el
+  reloj solo rellena el sobrante al final de la frase.
+- **Karaoke al día**: el marcado de respaldo sigue el ritmo real de la voz;
+  ya no se queda atrás ni deja palabras sin marcar.
+- **Corrección de seguridad**: al detener una lectura lenta y empezar otra de
+  inmediato, la sesión anterior ya no puede cortar la nueva ni abrir un cuadro
+  de resultados a mitad de la lectura.
+- Verificado: palabra 60→60, sílabas 20→20, corrido 20→20 y 120→120, y
+  cambios de modo/velocidad en secuencia sin interferencias.
+
+### v2.9 (diptongos y primer ajuste de pronunciación)
 
 - **Las sílabas se leen como palabras naturales**: la voz ya no deletrea
   ("da" antes sonaba "de a", "llu" sonaba "elle u", "ña" sonaba "na").
