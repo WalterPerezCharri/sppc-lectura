@@ -1,9 +1,30 @@
-# SPPC · Entrenador de Lectura — v2.6
+# SPPC · Entrenador de Lectura — v2.8
 
 Sistema Piramidal de Práctica Continua para la academia **Proyecto Academia Cerro de Pasco**.
 Entrenador de fluidez lectora para estudiantes de **7 a 17 años**, con niveles **L1–L10** (metas de 20 a 200 palabras por minuto, de 20 en 20).
 
-## Qué hay de nuevo en v2.6
+## Qué hay de nuevo en v2.8 (calibración de lectura)
+
+- **Modelo de calibración oficial**: el presupuesto de cada palabra
+  (60000/ppm milisegundos) incluye la voz y las pausas. Las ppm son
+  cronometradas y exactas en los tres modos.
+- **Un solo dial de pausa** ("Tiempo entre palabras / sílabas"): el mismo T se
+  usa entre palabras y entre sílabas, y se descuenta del presupuesto — pausa
+  más larga → la voz habla más rápido para mantener las ppm. Dos diales de
+  tiempo en total: velocidad (20–300 ppm, barra) y pausa (panel).
+- **Modo sílabas**: `Mi (T) ma(T)ma (T) es(T) ta…` — pausa tras cada sílaba.
+- **Tercer texto de muestra**: "Mi mamá está en la cama" (calibración, L1).
+- Verificado con cronómetro: 20 ppm → 21 reales en palabra, sílabas y corrido.
+
+### v2.7
+
+- **Sincronización real de ppm**: el modo Corrido antes mandaba todo el texto de
+  una vez a la voz y las ppm no se cumplían (20 ppm sonaba a ~59). Ahora los tres
+  modos usan un **reloj de sincronización**: tras cada palabra/frase la app compara
+  el tiempo real con la meta y ajusta la pausa siguiente. Medido: 20 ppm → 21
+  reales, 120 → 120, y así hasta 300 ppm con cualquier documento.
+
+### v2.6
 
 - **Regleta de meta de velocidad**: la parrilla de 15 casillas se reemplazó por una
   regleta compacta de 20 a 300 ppm en el panel de Práctica. Moverla fija el nivel

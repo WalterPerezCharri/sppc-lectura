@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SPPC · Entrenador de Lectura v2.6</title>
+<title>SPPC · Entrenador de Lectura v2.8</title>
 <script src="pdf.min.js"></script>
 <style>
   :root{
@@ -203,7 +203,7 @@
 
   <!-- ======== riel lateral ======== -->
   <nav id="rail">
-    <div class="rail-logo" title="SPPC · Entrenador de Lectura — PROTOTIPO 2.6">S</div>
+    <div class="rail-logo" title="SPPC · Entrenador de Lectura — PROTOTIPO 2.8">S</div>
     <button class="rail-btn active" data-panel="library" title="Estudiante, nivel y archivos">
       <svg viewBox="0 0 24 24"><path d="M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19a2 2 0 0 0 2 2h13"/><path d="M9 7h6M9 11h4"/></svg>
     </button>
@@ -269,7 +269,7 @@
           <div id="wordLayer"></div>
           <div class="textsheet welcome" id="welcomePage">
             <h1>Entrenador de Lectura SPPC</h1>
-            <div class="sub">Sistema Piramidal de Práctica Continua · Academia Cerro de Pasco · 7 a 17 años · PROTOTIPO 2.6</div>
+            <div class="sub">Sistema Piramidal de Práctica Continua · Academia Cerro de Pasco · 7 a 17 años · PROTOTIPO 2.8</div>
             <ol>
               <li>Abre un <b>PDF o TXT</b> con el botón <b>Abrir archivo</b> o prueba un <b>texto de muestra</b> del panel.</li>
               <li>Pulsa <b>▶ Leer</b>: la voz modelo lee y <b>resalta cada palabra</b> como karaoke.</li>
@@ -315,7 +315,7 @@
         <div class="fld-label">Opciones de lectura</div>
         <select class="vselect" id="voiceSel"></select>
         <div class="slider-row">Tono <input type="range" id="pitch" min="0.5" max="1.8" step="0.05" value="1"><b id="pitchVal">1.00</b></div>
-        <div class="slider-row">Pausa extra <input type="range" id="pause" min="200" max="1200" step="50" value="600"><b id="pauseVal">0.6 s</b></div>
+        <div class="slider-row" title="El mismo tiempo se usa entre palabras y entre sílabas, y se descuenta del tiempo de cada palabra">Tiempo entre palabras / sílabas <input type="range" id="pause" min="100" max="2000" step="50" value="600"><b id="pauseVal">0.6 s</b></div>
         <div class="preset-grid">
           <button class="preset" id="vp_aventura"><b>Aventura</b><span>Grave, pausada</span></button>
           <button class="preset" id="vp_novela"><b>Novela</b><span>Media, natural</span></button>
@@ -466,6 +466,9 @@ const SAMPLE_FILES=[
   { file:'textos-muestra/Muestra adolescentes — La mina y el futuro.txt', tag:'Adolescentes',
     title:'La mina y el futuro', levelId:'L8',
     body:'Cerro de Pasco creció al ritmo de la mina: primero la plata colonial, después el cobre y el zinc del siglo veinte. Durante generaciones, las familias organizaron sus horarios según los turnos de trabajo y la ciudad aprendió a vivir de lo que la montaña entregaba. Pero ningún mineral dura para siempre. Los jóvenes de hoy enfrentan una pregunta que sus abuelos no necesitaron hacerse: ¿qué será la ciudad cuando la veta se agote? La respuesta no está en abandonar la historia, sino en sumarle oficios nuevos: tecnología, turismo de altura, educación y servicios. Quien entiende su pasado puede imaginar su futuro; quien solo lo repite, se queda esperando. La montaña enseñó algo valioso: el verdadero recurso no está bajo la tierra, sino en la capacidad de su gente para reinventarse.' },
+  { file:'textos-muestra/Muestra calibración — Mi mamá está en la cama.txt', tag:'Calibración',
+    title:'Mi mamá está en la cama', levelId:'L1',
+    body:'Mi mamá está en la cama por culpa de una enfermedad que le afectó a lo largo de su vida: en el trabajo, su estilo de vida, su alimentación y sus cuidados personales. La verdad, ella quiere parecer sana a la vista de todos nosotros, pero ya no se puede ocultar lo obvio: ella está muy lastimada. No se puede seguir descuidando así de su salud. Ella en todo momento dice que está bien. Estamos coordinando con mis hermanos para darle lo mejor; que nuestras posibilidades mejoren su calidad de vida. Ella trabajó muchos años por nosotros y ahora que ya trabajamos queremos darle lo mejor de nosotros a ella.' },
 ];
 function renderSamples(){
   $('#sampleList').innerHTML=SAMPLE_FILES.map((t,i)=>{
@@ -771,14 +774,10 @@ $('#page').addEventListener('click', e=>{
 /* ============ REPRODUCCIÓN: voz modelo + karaoke ============ */
 function setStatus(m){ $('#status').textContent=m; }
 function wordPause(){ return +$('#pause').value; }
-/* pausa efectiva: la que falta para cumplir las ppm pedidas.
-   A rate 1.0 la voz dice ~150 ppm (400 ms/palabra); el resto del tiempo
-   lo rellena la pausa. Vale igual para PDF abierto o texto externo. */
-function effPause(){
-  const ppm=targetPpm(), speechMs=400/curRate();
-  const extra=Math.max(0,(+$('#pause').value)-600); // pausa extra del panel de voz
-  return Math.max(0, 60000/ppm - speechMs) + extra;
-}
+/* Dial de pausa (documento de calibración): el MISMO tiempo T se usa entre
+   palabras y entre sílabas, y se descuenta del presupuesto de cada palabra
+   (60000/ppm). Pausa más larga → la voz habla más rápido para que las ppm
+   cronometradas se mantengan exactas. */
 /* velocidad en palabras por minuto: misma meta para cualquier documento */
 function targetPpm(){ return +$('#rate').value; }
 function curRate(){ return Math.min(2.6, Math.max(0.45, targetPpm()/135)); }
@@ -786,13 +785,13 @@ function fmt(s){ s=Math.max(0,Math.floor(s)); return Math.floor(s/60)+':'+String
 function startTimer(){ state.t0=Date.now(); stopTimer(); state.timerInt=setInterval(()=>{ $('#timer').textContent=fmt((Date.now()-state.t0)/1000); },500); }
 function stopTimer(){ if(state.timerInt){ clearInterval(state.timerInt); state.timerInt=null; } }
 
-function speakOne(text,my){
+function speakOne(text,my,rateOverride){
   return new Promise(res=>{
     if(seqDead(my)) return res();
     const u=new SpeechSynthesisUtterance(text);
     const v=pickVoice(); if(v) u.voice=v;
     u.lang=(v&&v.lang)||'es-PE';
-    u.rate=curRate(); u.pitch=voicePitch;
+    u.rate=rateOverride||curRate(); u.pitch=voicePitch;
     utter=u;
     u.onend=()=>res(); u.onerror=()=>res();
     speechSynthesis.speak(u);
@@ -800,23 +799,35 @@ function speakOne(text,my){
 }
 
 /* lee una palabra según el modo: por palabra o por sílabas (con escudo anti-siglas) */
-async function speakWord(w,my){
+async function speakWord(w,my,budget){
+  const T=wordPause();                 // tiempo entre palabras = entre sílabas
   if(listenMode==='silabas'){
     const syl=syllabify(w.toLowerCase()).map(fixSyllableSpeech);
+    const k=syl.length;
+    /* presupuesto de voz por sílaba: (presupuesto − pausas T×k) / k.
+       (~250 ms por sílaba a velocidad 1.0) */
+    const sylBudget=Math.max(80,(budget-T*k)/k);
+    const r=Math.min(2.6,Math.max(0.45,250/sylBudget));
     for(const s of syl){
       if(seqDead(my)) return;
-      await speakOne(s,my);
-      if(!seqDead(my)) await sleep(effPause()*0.4);
+      await speakOne(s,my,r);
+      if(!seqDead(my)) await sleep(T); // pausa tras cada sílaba (= pausa de palabra)
     }
   }else{
-    await speakOne(speakText(w),my);
+    /* voz comprimida para que quepa la pausa T: (~400 ms por palabra a 1.0) */
+    const r=Math.min(2.6,Math.max(0.45,400/Math.max(150,budget-T)));
+    await speakOne(speakText(w),my,r);
   }
 }
 
-/* karaoke secuencial palabra a palabra (modos palabra / sílabas) */
+/* karaoke secuencial palabra a palabra (modos palabra / sílabas).
+   Reloj de sincronización: tras cada palabra compara el tiempo real con el
+   tiempo meta (palabras × 60000/ppm) y la pausa siguiente absorbe la
+   diferencia. Así 20 ppm suenan a 20 ppm con cualquier voz. */
 async function speakSeq(my){
   const d=state.doc; if(!d) return;
   const total=state.flat.length;
+  const t0=Date.now();
   for(let i=0;i<total;i++){
     if(seqDead(my)) break;
     const o=state.flat[i];
@@ -826,56 +837,88 @@ async function speakSeq(my){
     }
     state.curFlat=i;
     highlightWord(i);
-    await speakWord(o.w,my);
+    const budget=60000/targetPpm();
+    await speakWord(o.w,my,budget);
     if(seqDead(my)) break;
     mark(i,'ok');
-    if(!seqDead(my)) await sleep(effPause());
+    /* reloj: la pausa final cierra la palabra exactamente en su presupuesto */
+    const pause=Math.max(0,(i+1)*(60000/targetPpm())-(Date.now()-t0));
+    if(pause>0 && !seqDead(my)) await sleep(pause);
   }
   if(!seqDead(my)) document.querySelectorAll('.wword.cur,.tw.cur').forEach(el=>el.classList.remove('cur'));
 }
 
-/* lectura continua con resaltado por onboundary (modo corrido) */
-function speakCorrido(my){
+/* modo corrido: la voz lee frase por frase (fluido, con karaoke por
+   onboundary) y el mismo reloj de ppm inserta las pausas necesarias para
+   cumplir la meta. Antes era una sola frase gigante y las ppm no aplicaban. */
+function speakChunk(words, firstFi, my){
   return new Promise(res=>{
-    const d=state.doc;
+    if(seqDead(my)) return res();
     const idx=[]; let pos=0;
-    state.flat.forEach(o=>{ idx.push(pos); pos+=o.w.length+1; });
-    const u=new SpeechSynthesisUtterance(state.flat.map(o=>o.w).join(' '));
+    words.forEach(w=>{ idx.push(pos); pos+=w.length+1; });
+    const u=new SpeechSynthesisUtterance(words.join(' '));
     const v=pickVoice(); if(v) u.voice=v;
-    u.lang=(v&&v.lang)||'es-PE'; u.rate=curRate(); u.pitch=voicePitch;
+    const budgetW=60000/targetPpm();
+    u.lang=(v&&v.lang)||'es-PE';
+    u.rate=Math.min(2.6,Math.max(0.45,400/Math.max(150,budgetW-wordPause())));
+    u.pitch=voicePitch;
     utter=u;
-    let gotBoundary=false;
-    const wiOf=ci=>{
-      let wi=idx.length-1;
-      for(let i=0;i<idx.length;i++){ if(idx[i]>ci){ wi=Math.max(0,i-1); break; } }
-      return wi;
-    };
+    let gotB=false;
     const show=wi=>{
       if(seqDead(my)) return;
-      const page=state.flat[wi].page;
-      state.curFlat=wi;
-      if(d.kind==='pdf' && page+1!==state.curPage){
-        renderPdfPage(page+1).then(()=>{ if(!seqDead(my)) highlightWord(wi); });
-      }else highlightWord(wi);
+      const fi=firstFi+wi;
+      const page=state.flat[fi] && state.flat[fi].page;
+      state.curFlat=fi;
+      if(state.doc.kind==='pdf' && page+1!==state.curPage){
+        renderPdfPage(page+1).then(()=>{ if(!seqDead(my)) highlightWord(fi); });
+      }else highlightWord(fi);
     };
     u.onboundary=e=>{
       if(e.name && e.name!=='word') return;
-      gotBoundary=true;
+      gotB=true;
       if(listenFallback){ clearInterval(listenFallback); listenFallback=null; }
-      show(wiOf(e.charIndex||0));
+      let wi=idx.length-1;
+      for(let i=0;i<idx.length;i++){ if(idx[i]>(e.charIndex||0)){ wi=Math.max(0,i-1); break; } }
+      show(wi);
     };
-    u.onend=()=>{ if(listenFallback){ clearInterval(listenFallback); listenFallback=null; } res(); };
-    u.onerror=()=>{ if(listenFallback){ clearInterval(listenFallback); listenFallback=null; } res(); };
+    const done=()=>{ if(listenFallback){ clearInterval(listenFallback); listenFallback=null; } res(); };
+    u.onend=done; u.onerror=done;
     speechSynthesis.speak(u);
-    /* algunas voces no emiten onboundary: avance estimado como respaldo */
-    const msPerWord=Math.max(120, 60000/targetPpm());
+    /* respaldo si la voz no emite onboundary */
     let wi=0;
     listenFallback=setInterval(()=>{
-      if(gotBoundary || seqDead(my)){ clearInterval(listenFallback); listenFallback=null; return; }
+      if(gotB || seqDead(my)){ clearInterval(listenFallback); listenFallback=null; return; }
       show(wi++);
       if(wi>=idx.length){ clearInterval(listenFallback); listenFallback=null; }
-    }, msPerWord);
+    }, Math.max(120, 400/curRate()));
   });
+}
+async function speakCorrido(my){
+  const d=state.doc; if(!d) return;
+  /* agrupar en frases (punto, coma, dos puntos…) de máx. 12 palabras */
+  const chunks=[]; let cur=[];
+  state.flat.forEach((o,i)=>{
+    cur.push(i);
+    if(/[.!?…,;:]["»)]?$/.test(o.w) || cur.length>=12){ chunks.push(cur); cur=[]; }
+  });
+  if(cur.length) chunks.push(cur);
+  const t0=Date.now();
+  let spoken=0;
+  for(const ch of chunks){
+    if(seqDead(my)) return;
+    const o=state.flat[ch[0]];
+    if(d.kind==='pdf' && o.page+1!==state.curPage){
+      await renderPdfPage(o.page+1);
+      if(seqDead(my)) return;
+    }
+    await speakChunk(ch.map(i=>state.flat[i].w), ch[0], my);
+    if(seqDead(my)) return;
+    ch.forEach(i=>mark(i,'ok'));
+    spoken+=ch.length;
+    const pause=Math.max(0, spoken*(60000/targetPpm())-(Date.now()-t0));
+    if(pause>0 && !seqDead(my)) await sleep(pause);
+  }
+  document.querySelectorAll('.wword.cur,.tw.cur').forEach(el=>el.classList.remove('cur'));
 }
 
 async function runVoiceModel(){
