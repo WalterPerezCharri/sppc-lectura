@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SPPC · Entrenador de Lectura v2.9.1</title>
+<title>SPPC · Entrenador de Lectura v2.9.2</title>
 <script src="pdf.min.js"></script>
 <style>
   :root{
@@ -203,7 +203,7 @@
 
   <!-- ======== riel lateral ======== -->
   <nav id="rail">
-    <div class="rail-logo" title="SPPC · Entrenador de Lectura — PROTOTIPO 2.9.1">S</div>
+    <div class="rail-logo" title="SPPC · Entrenador de Lectura — PROTOTIPO 2.9.2">S</div>
     <button class="rail-btn active" data-panel="library" title="Estudiante, nivel y archivos">
       <svg viewBox="0 0 24 24"><path d="M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19a2 2 0 0 0 2 2h13"/><path d="M9 7h6M9 11h4"/></svg>
     </button>
@@ -269,7 +269,7 @@
           <div id="wordLayer"></div>
           <div class="textsheet welcome" id="welcomePage">
             <h1>Entrenador de Lectura SPPC</h1>
-            <div class="sub">Sistema Piramidal de Práctica Continua · Academia Cerro de Pasco · 7 a 17 años · PROTOTIPO 2.9.1</div>
+            <div class="sub">Sistema Piramidal de Práctica Continua · Academia Cerro de Pasco · 7 a 17 años · PROTOTIPO 2.9.2</div>
             <ol>
               <li>Abre un <b>PDF o TXT</b> con el botón <b>Abrir archivo</b> o prueba un <b>texto de muestra</b> del panel.</li>
               <li>Pulsa <b>▶ Leer</b>: la voz modelo lee y <b>resalta cada palabra</b> como karaoke.</li>
@@ -875,10 +875,10 @@ function speakChunk(words, firstFi, my){
     const v=pickVoice(); if(v) u.voice=v;
     const budgetW=60000/targetPpm();
     u.lang=(v&&v.lang)||'es-PE';
-    /* la voz absorbe TODO el presupuesto de la palabra (sin restar pausa):
-       habla lo más natural posible y el reloj solo rellena el sobrante,
-       que cae siempre al final de la frase — nada de frenones a media
-       oración ni voces aceleradas que la voz termina deletreando */
+    /* velocidad directa: ppm/150 (a ritmo 1.0 la voz hace ~150 ppm).
+       La voz lee continuo y pone sus pausas naturales en la puntuación;
+       el piso 0.45 equivale a ~65 ppm — más lento que eso solo lo hacen
+       los modos palabra/sílabas, que sí llevan pausa entre palabras */
     u.rate=Math.min(2.6,Math.max(0.45,400/Math.max(150,budgetW)));
     u.pitch=voicePitch;
     utter=u;
@@ -915,21 +915,20 @@ function speakChunk(words, firstFi, my){
 }
 async function speakCorrido(my){
   const d=state.doc; if(!d) return;
-  /* bloques por FRASE: el corte cae justo en la puntuación (. ! ? … y las
-     comas cuando la frase es larga), así la pausa natural cae donde debe —
-     nada de pausas a media oración 2-3 palabras antes del punto */
+  /* LECTURA CONTINUA: bloques grandes (toda la página o ~100 palabras),
+     cortando SOLO al final de una oración. La voz pone sus pausas naturales
+     en punto y coma; la app NO mete silencios artificiales entre bloques */
   const chunks=[]; let cur=[];
   const endPun=w=>/[.!?…]["')\]]?$/.test(w);
-  const midPun=w=>/[,;:]["')\]]?$/.test(w);
   state.flat.forEach((o,i)=>{
     cur.push(i);
-    if(cur.length>=12 || (endPun(o.w) && cur.length>=2) || (midPun(o.w) && cur.length>=8)){
+    const nx=state.flat[i+1];
+    const pageEnds = d.kind==='pdf' && nx && nx.page!==o.page;
+    if(pageEnds || (endPun(o.w) && cur.length>=100) || cur.length>=130){
       chunks.push(cur); cur=[];
     }
   });
   if(cur.length) chunks.push(cur);
-  const t0=Date.now();
-  let spoken=0;
   for(const ch of chunks){
     if(seqDead(my)) return;
     const o=state.flat[ch[0]];
@@ -940,9 +939,6 @@ async function speakCorrido(my){
     await speakChunk(ch.map(i=>state.flat[i].w), ch[0], my);
     if(seqDead(my)) return;
     ch.forEach(i=>mark(i,'ok'));
-    spoken+=ch.length;
-    const pause=Math.max(0, spoken*(60000/targetPpm())-(Date.now()-t0));
-    if(pause>0 && !seqDead(my)) await sleep(pause);
   }
   document.querySelectorAll('.wword.cur,.tw.cur').forEach(el=>el.classList.remove('cur'));
 }

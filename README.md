@@ -1,9 +1,23 @@
-# SPPC · Entrenador de Lectura — v2.9.1
+# SPPC · Entrenador de Lectura — v2.9.2
 
 Sistema Piramidal de Práctica Continua para la academia **Proyecto Academia Cerro de Pasco**.
 Entrenador de fluidez lectora para estudiantes de **7 a 17 años**, con niveles **L1–L15** (metas de 20 a 300 palabras por minuto, de 20 en 20).
 
-## Qué hay de nuevo en v2.9.1 (pronunciación corregida y corrido sin cortes)
+## Qué hay de nuevo en v2.9.2 (corrido 100% continuo)
+
+- **Corrido sin pausas artificiales**: la página completa se lee como UNA sola
+  frase corrida; las únicas pausas son las naturales que la voz hace en punto
+  y coma. Se eliminaron los rellenos de silencio del reloj en este modo.
+- **Velocidad en corrido = velocidad de la voz** (ppm/150): a 120 ppm la voz va
+  a 0.8×, a 240 a 1.6×. El piso natural de la voz es ~65 ppm; velocidades más
+  lentas con pausa exacta entre palabras están en los modos palabra y sílabas.
+- El karaoke sigue palabra por palabra sobre el PDF al ritmo real de la voz.
+- Sílabas: la corrección de v2.9.1 se mantiene (todas con tilde de apoyo salvo
+  da/llu/ñ-planas; "que/gue" una sola sílaba). Verifica que la pantalla de
+  inicio diga **PROTOTIPO 2.9.2** — si dice otro número, estás viendo la
+  versión vieja en caché (Ctrl+F5).
+
+### v2.9.1 (pronunciación corregida)
 
 - **Las sílabas vuelven a sonar naturales**: la regla ahora es tilde de apoyo
   en TODAS las sílabas **excepto** las pocas que se rompen con tilde
