@@ -1,9 +1,24 @@
-# SPPC · Entrenador de Lectura — v2.9.3
+# SPPC · Entrenador de Lectura — v2.9.4
 
 Sistema Piramidal de Práctica Continua para la academia **Proyecto Academia Cerro de Pasco**.
 Entrenador de fluidez lectora para estudiantes de **7 a 17 años**, con niveles **L1–L15** (metas de 20 a 300 palabras por minuto, de 20 en 20).
 
-## Qué hay de nuevo en v2.9.3 (corrido con cronómetro obedecido)
+## Qué hay de nuevo en v2.9.4 (corrido sin esperas largas)
+
+- **Adiós al silencio largo después del punto**: el tiempo que la voz no usa
+  ya no se amontona en la puntuación — se REPARTE parejo durante la lectura.
+  El tamaño de cada trozo se ajusta solo según lo que la voz tarda de verdad:
+  a ppm bajas los trozos se acortan hasta salir palabra por palabra como un
+  metrónomo (a 20 ppm: una palabra cada 3 segundos, espera pareja de ~2 s);
+  a ppm altas las frases van completas y fluidas sin ninguna espera.
+- **Sin transitorio**: la primera frase arranca con ritmo conservador y la
+  realimentación lo afina de inmediato — desde la primera frase no hay
+  pausas raras (verificado: 20 ppm → 21 real, 120 → 115 real, esperas de
+  0 ms en cuanto la voz alcanza la velocidad).
+- El cronómetro se sigue obedeciendo en todos los casos.
+- Verifica que la pantalla de inicio diga **PROTOTIPO 2.9.4**.
+
+### v2.9.3 (corrido con cronómetro obedecido)
 
 - **El corrido ahora obedece la ppm exacta**: la voz se AUTORREGULA frase a
   frase — mide cuánto tardó de verdad y corrige el ritmo de la siguiente

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SPPC · Entrenador de Lectura v2.9.3</title>
+<title>SPPC · Entrenador de Lectura v2.9.4</title>
 <script src="pdf.min.js"></script>
 <style>
   :root{
@@ -203,7 +203,7 @@
 
   <!-- ======== riel lateral ======== -->
   <nav id="rail">
-    <div class="rail-logo" title="SPPC · Entrenador de Lectura — PROTOTIPO 2.9.3">S</div>
+    <div class="rail-logo" title="SPPC · Entrenador de Lectura — PROTOTIPO 2.9.4">S</div>
     <button class="rail-btn active" data-panel="library" title="Estudiante, nivel y archivos">
       <svg viewBox="0 0 24 24"><path d="M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19a2 2 0 0 0 2 2h13"/><path d="M9 7h6M9 11h4"/></svg>
     </button>
@@ -269,7 +269,7 @@
           <div id="wordLayer"></div>
           <div class="textsheet welcome" id="welcomePage">
             <h1>Entrenador de Lectura SPPC</h1>
-            <div class="sub">Sistema Piramidal de Práctica Continua · Academia Cerro de Pasco · 7 a 17 años · PROTOTIPO 2.9.3</div>
+            <div class="sub">Sistema Piramidal de Práctica Continua · Academia Cerro de Pasco · 7 a 17 años · PROTOTIPO 2.9.4</div>
             <ol>
               <li>Abre un <b>PDF o TXT</b> con el botón <b>Abrir archivo</b> o prueba un <b>texto de muestra</b> del panel.</li>
               <li>Pulsa <b>▶ Leer</b>: la voz modelo lee y <b>resalta cada palabra</b> como karaoke.</li>
@@ -911,42 +911,52 @@ function speakChunk(words, firstFi, my, rate){
 }
 async function speakCorrido(my){
   const d=state.doc; if(!d) return;
-  /* frases completas: el corte cae en punto (o en coma si la oración es
-     larga). El cronómetro manda: la voz se AUTORREGULA frase a frase (mide
-     cuánto tardó realmente y corrige el ritmo de la siguiente) y el tiempo
-     sobrante espera en la puntuación — nunca a media oración */
-  const chunks=[]; let cur=[];
+  /* El cronómetro manda y la espera NUNCA se amontona en el punto: el tamaño
+     de cada trozo se ajusta solo según lo que la voz tarda de verdad.
+     Si sobra mucho tiempo (ppm bajas), los trozos se acortan hasta repartir
+     el tiempo parejo (palabra por palabra, como metrónomo); si la voz ya va
+     a la velocidad pedida (ppm altas), las frases van completas y fluidas.
+     Así el relleno tras cada trozo nunca pasa de ~1.4 s — no hay silencios
+     muertos largos en ningún punto. */
   const endPun=w=>/[.!?…]["')\]]?$/.test(w);
   const midPun=w=>/[,;:]["')\]]?$/.test(w);
-  state.flat.forEach((o,i)=>{
-    cur.push(i);
-    const nx=state.flat[i+1];
-    const pageEnds = d.kind==='pdf' && nx && nx.page!==o.page;
-    if(pageEnds || (endPun(o.w) && cur.length>=3) || (midPun(o.w) && cur.length>=10) || cur.length>=16){
-      chunks.push(cur); cur=[];
-    }
-  });
-  if(cur.length) chunks.push(cur);
   const t0=Date.now();
-  let spoken=0;
-  let rate=Math.min(2.6,Math.max(0.2,targetPpm()/150));
-  for(const ch of chunks){
+  let spoken=0, fi=0;
+  /* arranque conservador: asume voz rápida (300 ppm a ritmo 1.0) para que
+     la primera frase salga lenta y sin espera; la realimentación lo ajusta */
+  let rate=Math.min(2.6,Math.max(0.2,targetPpm()/300));
+  let msWord=400/rate;              // estimación inicial; se corrige midiendo
+  while(fi<state.flat.length){
     if(seqDead(my)) return;
-    const o=state.flat[ch[0]];
-    if(d.kind==='pdf' && o.page+1!==state.curPage){
-      await renderPdfPage(o.page+1);
+    const budget=60000/targetPpm();
+    const slack=budget-msWord;      // tiempo que sobraría por palabra
+    const maxLen= slack<=150 ? 16 : Math.max(1,Math.round(1400/slack));
+    const idx=[];
+    while(fi+idx.length<state.flat.length && idx.length<maxLen){
+      const o=state.flat[fi+idx.length];
+      idx.push(fi+idx.length);
+      const n=idx.length;
+      if(endPun(o.w) && n>=Math.min(3,maxLen)) break;
+      if(midPun(o.w) && n>=Math.min(10,maxLen)) break;
+      const nx=state.flat[fi+idx.length];
+      if(d.kind==='pdf' && nx && nx.page!==o.page) break;
+    }
+    const o0=state.flat[idx[0]];
+    if(d.kind==='pdf' && o0.page+1!==state.curPage){
+      await renderPdfPage(o0.page+1);
       if(seqDead(my)) return;
     }
     const tv=Date.now();
-    await speakChunk(ch.map(i=>state.flat[i].w), ch[0], my, rate);
+    await speakChunk(idx.map(i=>state.flat[i].w), idx[0], my, rate);
     if(seqDead(my)) return;
-    /* realimentación: mide la velocidad real de la voz y corrige
-       (si la voz fue más rápida que la meta, baja el ritmo y viceversa) */
-    const voiceSecs=Math.max(0.2,(Date.now()-tv)/1000);
-    const measured=ch.length/(voiceSecs/60);
+    /* mide la voz real: corrige el ritmo y el tamaño del próximo trozo */
+    const voiceSecs=Math.max(0.15,(Date.now()-tv)/1000);
+    msWord=(voiceSecs*1000)/idx.length;
+    const measured=idx.length/(voiceSecs/60);
     rate=Math.min(2.6,Math.max(0.2, rate*Math.min(1.35,Math.max(0.7,targetPpm()/measured)) ));
-    ch.forEach(i=>mark(i,'ok'));
-    spoken+=ch.length;
+    idx.forEach(i=>mark(i,'ok'));
+    spoken+=idx.length;
+    fi+=idx.length;
     const pause=Math.max(0, spoken*(60000/targetPpm())-(Date.now()-t0));
     if(pause>0 && !seqDead(my)) await sleep(pause);
   }
