@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SPPC · Entrenador de Lectura v2.9.2</title>
+<title>SPPC · Entrenador de Lectura v2.9.3</title>
 <script src="pdf.min.js"></script>
 <style>
   :root{
@@ -203,7 +203,7 @@
 
   <!-- ======== riel lateral ======== -->
   <nav id="rail">
-    <div class="rail-logo" title="SPPC · Entrenador de Lectura — PROTOTIPO 2.9.2">S</div>
+    <div class="rail-logo" title="SPPC · Entrenador de Lectura — PROTOTIPO 2.9.3">S</div>
     <button class="rail-btn active" data-panel="library" title="Estudiante, nivel y archivos">
       <svg viewBox="0 0 24 24"><path d="M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19a2 2 0 0 0 2 2h13"/><path d="M9 7h6M9 11h4"/></svg>
     </button>
@@ -269,7 +269,7 @@
           <div id="wordLayer"></div>
           <div class="textsheet welcome" id="welcomePage">
             <h1>Entrenador de Lectura SPPC</h1>
-            <div class="sub">Sistema Piramidal de Práctica Continua · Academia Cerro de Pasco · 7 a 17 años · PROTOTIPO 2.9.2</div>
+            <div class="sub">Sistema Piramidal de Práctica Continua · Academia Cerro de Pasco · 7 a 17 años · PROTOTIPO 2.9.3</div>
             <ol>
               <li>Abre un <b>PDF o TXT</b> con el botón <b>Abrir archivo</b> o prueba un <b>texto de muestra</b> del panel.</li>
               <li>Pulsa <b>▶ Leer</b>: la voz modelo lee y <b>resalta cada palabra</b> como karaoke.</li>
@@ -866,20 +866,16 @@ async function speakSeq(my){
 /* modo corrido: la voz lee frase por frase (fluido, con karaoke por
    onboundary) y el mismo reloj de ppm inserta las pausas necesarias para
    cumplir la meta. Antes era una sola frase gigante y las ppm no aplicaban. */
-function speakChunk(words, firstFi, my){
+function speakChunk(words, firstFi, my, rate){
   return new Promise(res=>{
     if(seqDead(my)) return res();
     const idx=[]; let pos=0;
     words.forEach(w=>{ idx.push(pos); pos+=w.length+1; });
     const u=new SpeechSynthesisUtterance(words.join(' '));
     const v=pickVoice(); if(v) u.voice=v;
-    const budgetW=60000/targetPpm();
     u.lang=(v&&v.lang)||'es-PE';
-    /* velocidad directa: ppm/150 (a ritmo 1.0 la voz hace ~150 ppm).
-       La voz lee continuo y pone sus pausas naturales en la puntuación;
-       el piso 0.45 equivale a ~65 ppm — más lento que eso solo lo hacen
-       los modos palabra/sílabas, que sí llevan pausa entre palabras */
-    u.rate=Math.min(2.6,Math.max(0.45,400/Math.max(150,budgetW)));
+    /* la velocidad la fija speakCorrido con realimentación por frase */
+    u.rate=rate||1;
     u.pitch=voicePitch;
     utter=u;
     let gotB=false;
@@ -915,20 +911,25 @@ function speakChunk(words, firstFi, my){
 }
 async function speakCorrido(my){
   const d=state.doc; if(!d) return;
-  /* LECTURA CONTINUA: bloques grandes (toda la página o ~100 palabras),
-     cortando SOLO al final de una oración. La voz pone sus pausas naturales
-     en punto y coma; la app NO mete silencios artificiales entre bloques */
+  /* frases completas: el corte cae en punto (o en coma si la oración es
+     larga). El cronómetro manda: la voz se AUTORREGULA frase a frase (mide
+     cuánto tardó realmente y corrige el ritmo de la siguiente) y el tiempo
+     sobrante espera en la puntuación — nunca a media oración */
   const chunks=[]; let cur=[];
   const endPun=w=>/[.!?…]["')\]]?$/.test(w);
+  const midPun=w=>/[,;:]["')\]]?$/.test(w);
   state.flat.forEach((o,i)=>{
     cur.push(i);
     const nx=state.flat[i+1];
     const pageEnds = d.kind==='pdf' && nx && nx.page!==o.page;
-    if(pageEnds || (endPun(o.w) && cur.length>=100) || cur.length>=130){
+    if(pageEnds || (endPun(o.w) && cur.length>=3) || (midPun(o.w) && cur.length>=10) || cur.length>=16){
       chunks.push(cur); cur=[];
     }
   });
   if(cur.length) chunks.push(cur);
+  const t0=Date.now();
+  let spoken=0;
+  let rate=Math.min(2.6,Math.max(0.2,targetPpm()/150));
   for(const ch of chunks){
     if(seqDead(my)) return;
     const o=state.flat[ch[0]];
@@ -936,9 +937,18 @@ async function speakCorrido(my){
       await renderPdfPage(o.page+1);
       if(seqDead(my)) return;
     }
-    await speakChunk(ch.map(i=>state.flat[i].w), ch[0], my);
+    const tv=Date.now();
+    await speakChunk(ch.map(i=>state.flat[i].w), ch[0], my, rate);
     if(seqDead(my)) return;
+    /* realimentación: mide la velocidad real de la voz y corrige
+       (si la voz fue más rápida que la meta, baja el ritmo y viceversa) */
+    const voiceSecs=Math.max(0.2,(Date.now()-tv)/1000);
+    const measured=ch.length/(voiceSecs/60);
+    rate=Math.min(2.6,Math.max(0.2, rate*Math.min(1.35,Math.max(0.7,targetPpm()/measured)) ));
     ch.forEach(i=>mark(i,'ok'));
+    spoken+=ch.length;
+    const pause=Math.max(0, spoken*(60000/targetPpm())-(Date.now()-t0));
+    if(pause>0 && !seqDead(my)) await sleep(pause);
   }
   document.querySelectorAll('.wword.cur,.tw.cur').forEach(el=>el.classList.remove('cur'));
 }
